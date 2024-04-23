@@ -15,14 +15,14 @@ const addresses = require('./routes/addresses');
 const services = require('./routes/service');
 const appointments = require('./routes/appointment');
 
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ limit: "100mb", extended: true }));
+app.use(cookieParser());
 app.use(cors({
     origin: "https://frontend-team-poor-motorcycle-parts-and-services.vercel.app",
     credentials: true,
     exposedHeaders: ['Access-Control-Allow-Origin']
 }));
-app.use(express.json({ limit: '100mb' }));
-app.use(express.urlencoded({ limit: "100mb", extended: true }));
-app.use(cookieParser());
 
 app.use('/api/v1',users);
 app.use('/api/v1', motorcycles);
