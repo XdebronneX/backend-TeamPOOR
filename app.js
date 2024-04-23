@@ -34,5 +34,7 @@ app.use('/api/v1', addresses);
 app.use('/api/v1', services);
 app.use('/api/v1', appointments);
 app.use(errorMiddleware);
+app.options('*', cors());
+
 
 module.exports = app
