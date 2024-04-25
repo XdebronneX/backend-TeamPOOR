@@ -14,25 +14,25 @@ const fuels = require('./routes/fuel');
 const addresses = require('./routes/addresses');
 const services = require('./routes/service');
 const appointments = require('./routes/appointment');
-// const allowedOrigins = ['https://teampoor-motorcycle-parts-and-services.vercel.app', "http://localhost:3000"];
+const allowedOrigins = ['https://teampoor-motorcycle-parts-and-services.vercel.app'];
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(cookieParser());
-app.use(cors({
-    origin: ["https://teampoor-motorcycle-parts-and-services.vercel.app", "http://localhost:3000"],
-    credentials: true,
-}));
 // app.use(cors({
-//     origin: (origin, callback) => {
-//         if (!origin || allowedOrigins.includes(origin)) {
-//             callback(null, true);
-//         } else {
-//             callback(new Error('Not allowed by CORS'));
-//         }
-//     },
+//     origin: ["https://teampoor-motorcycle-parts-and-services.vercel.app", "http://localhost:3000"],
 //     credentials: true,
 // }));
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+}));
 
 
 app.use('/api/v1',users);
