@@ -162,10 +162,7 @@ const loginUser = async (req, res, next) => {
 const logoutUser = async (req, res, next) => {
     try {
         // Clear the token cookie by setting it to an empty string or omitting the value
-        res.cookie("token", "", {
-            expires: new Date(0), // Set expiration date in the past
-            httpOnly: true,
-        });
+        res.cookie('token', token, { httpOnly: true, secure: true, maxAge: 10 * 1000 });
         
         // Send a response indicating successful logout
         res.status(200).json({ success: true, message: "Logged out successfully" });
