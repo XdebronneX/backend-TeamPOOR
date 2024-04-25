@@ -32,9 +32,9 @@ app.use(cors({
             callback(new Error('Not allowed by CORS'));
         }
     },
-    credentials: true,
-    exposedHeaders: "Access-Control-Allow-Origin"
+    credentials: true
 }));
+
 
 app.use('/api/v1',users);
 app.use('/api/v1', motorcycles);
