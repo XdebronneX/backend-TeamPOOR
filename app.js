@@ -19,6 +19,7 @@ app.use(cors({
     origin: ["https://frontend-team-poor-motorcycle-parts-and-services.vercel.app"],
     credentials: true,
 }));
+app.options('*', cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(cookieParser());
