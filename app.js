@@ -18,11 +18,10 @@ const appointments = require('./routes/appointment');
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(cookieParser());
-app.use(cors({
-    origin: "https://frontend-team-poor-motorcycle-parts-and-services.vercel.app/",
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
-}));
+// app.use(cors({
+//     origin: "https://frontend-team-poor-motorcycle-parts-and-services.vercel.app/",
+//     credentials: true,
+// }));
 
 app.use('/api/v1',users);
 app.use('/api/v1', motorcycles);
