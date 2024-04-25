@@ -14,6 +14,7 @@ const fuels = require('./routes/fuel');
 const addresses = require('./routes/addresses');
 const services = require('./routes/service');
 const appointments = require('./routes/appointment');
+const allowedOrigins = ['https://teampoor-motorcycle-parts-and-services.vercel.app'];
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
@@ -22,8 +23,6 @@ app.use(cookieParser());
 //     origin: "https://teampoor-motorcycle-parts-and-services.vercel.app",
 //     credentials: true,
 // }));
-
-const allowedOrigins = ['https://teampoor-motorcycle-parts-and-services.vercel.app'];
 app.use(cors({
     origin: (origin, callback) => {
         if (!origin || allowedOrigins.includes(origin)) {
