@@ -33,6 +33,7 @@ app.use(cors({
         }
     },
     credentials: true,
+    exposedHeaders: "Access-Control-Allow-Origin"
 }));
 
 app.use('/api/v1',users);
