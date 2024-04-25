@@ -161,16 +161,20 @@ const loginUser = async (req, res, next) => {
 
 const logoutUser = async (req, res, next) => {
     try {
-        res.cookie("token", null, {
-            expires: new Date(0),
+        // Clear the token cookie by setting it to an empty string or omitting the value
+        res.cookie("token", "", {
+            expires: new Date(0), // Set expiration date in the past
             httpOnly: true,
         });
+        
+        // Send a response indicating successful logout
         res.status(200).json({ success: true, message: "Logged out successfully" });
     } catch (error) {
         // Handle any unexpected errors that might occur
         next(error); // Pass the error to the error handling middleware
     }
 }
+
 
 const getUserProfile = async (req, res, next) => {
     try {
