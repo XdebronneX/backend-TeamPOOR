@@ -16,7 +16,7 @@ const services = require('./routes/service');
 const appointments = require('./routes/appointment');
 
 app.use(cors({
-    origin: "https://frontend-team-poor-motorcycle-parts-and-services.vercel.app",
+    origin: ["https://frontend-team-poor-motorcycle-parts-and-services.vercel.app"],
     credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
