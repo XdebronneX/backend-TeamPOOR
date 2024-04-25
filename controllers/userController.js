@@ -78,6 +78,86 @@ const registerUser = async (req, res, next) => {
     }
 };
 
+// const loginUser = async (req, res, next) => {
+//     const { email, password } = req.body;
+
+//     try {
+//         // Checks if email and password are entered by the user
+//         if (!email || !password) {
+//             return next(new ErrorHandler("Please enter email & password", 400));
+//         }
+
+//         // Finding the user in the database
+//         const user = await UserModel.findOne({ email }).select("+password");
+
+//         if (!user) {
+//             return next(new ErrorHandler("Invalid Email or Password", 400));
+//         }
+
+//         // Checks if the password is correct
+//         const isPasswordMatched = await bcrypt.compare(password, user.password);
+
+//         if (!isPasswordMatched) {
+//             return next(new ErrorHandler("Invalid Email or Password", 401));
+//         }
+
+//         if (!user.verified) {
+//             let token = await TokenModel.findOne({ verifyUser: user._id });
+//             if (!token || token.verificationTokenExpire < Date.now()) {
+//                 token = await TokenModel.findOneAndUpdate(
+//                     {
+//                         verifyUser: user._id
+//                     },
+//                     {
+//                         token: crypto.randomBytes(32).toString("hex"),
+//                         verificationTokenExpire: new Date(Date.now() + 2 * 60 * 1000)
+//                     },
+//                     { new: true, upsert: true }
+//                 );
+//                 const emailVerification = `${process.env.FRONTEND_URL}/verify/email/${token.token}/${user._id}`;
+
+//                 // HTML content for the email
+//                 const emailContent = `
+//                 <div style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 15px; justify-content: center; align-items: center; height: 40vh;">
+//                 <div style="background-color: #ffffff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); text-align: center;">
+//                 <h1 style="font-size: 24px; color: #333;">Email Verification Request</h1>
+//                 <p style="font-size: 16px; color: #555;">Hello ${user.firstname},</p>
+//                 <p style="font-size: 16px; color: #555;">Thank you for signing up with teamPOOR - Motorcycle Parts & Services. To complete your registration, please verify your email address by clicking the button below:</p>
+//                 <p style="text-align: center;">
+//                     <a href="${emailVerification}" style="display: inline-block; background-color: #007bff; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 10px; font-size: 16px;" target="_blank">Verify Email</a>
+//                 </p>
+//                 <p style="font-size: 16px; color: #555;">If you did not request this, you can safely ignore this email.</p>
+//                 <p style="font-size: 16px; color: #555;">Please note: Your security is important to us. We will never ask you to share your password or other sensitive information via email.</p>
+//                 <p style="font-size: 16px; color: #555;">Best regards,<br>teamPOOR - Motorcycle Parts & Services</p>
+//                 </div>
+//                 </div>
+//             `;
+//                 await sendtoEmail(
+//                     user.email,
+//                     "teamPOOR - Verify Email",
+//                     emailContent,
+//                     true,
+//                 );
+//                 // New Token will be sent as a response with status code
+//                 res.status(403).json({
+//                     success: false,
+//                     message: "Token expired! new  one has been sent to your email.",
+//                 });
+//             } else {
+//                 // already send  a verification link
+//                 return next(new ErrorHandler("Please check your email for verification link.", 403));
+//             }
+//         } else {
+//             // If all checks pass, send the token
+//             sendToken(user, 200, res);
+//         }
+
+//     } catch (error) {
+//         console.log(error);
+//         return next(new ErrorHandler("Internal server error!", 500));
+//     }
+// };
+
 const loginUser = async (req, res, next) => {
     const { email, password } = req.body;
 
@@ -118,20 +198,20 @@ const loginUser = async (req, res, next) => {
 
                 // HTML content for the email
                 const emailContent = `
-                <div style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 15px; justify-content: center; align-items: center; height: 40vh;">
-                <div style="background-color: #ffffff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); text-align: center;">
-                <h1 style="font-size: 24px; color: #333;">Email Verification Request</h1>
-                <p style="font-size: 16px; color: #555;">Hello ${user.firstname},</p>
-                <p style="font-size: 16px; color: #555;">Thank you for signing up with teamPOOR - Motorcycle Parts & Services. To complete your registration, please verify your email address by clicking the button below:</p>
-                <p style="text-align: center;">
-                    <a href="${emailVerification}" style="display: inline-block; background-color: #007bff; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 10px; font-size: 16px;" target="_blank">Verify Email</a>
-                </p>
-                <p style="font-size: 16px; color: #555;">If you did not request this, you can safely ignore this email.</p>
-                <p style="font-size: 16px; color: #555;">Please note: Your security is important to us. We will never ask you to share your password or other sensitive information via email.</p>
-                <p style="font-size: 16px; color: #555;">Best regards,<br>teamPOOR - Motorcycle Parts & Services</p>
-                </div>
-                </div>
-            `;
+                    <div style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 15px; justify-content: center; align-items: center; height: 40vh;">
+                        <div style="background-color: #ffffff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); text-align: center;">
+                            <h1 style="font-size: 24px; color: #333;">Email Verification Request</h1>
+                            <p style="font-size: 16px; color: #555;">Hello ${user.firstname},</p>
+                            <p style="font-size: 16px; color: #555;">Thank you for signing up with teamPOOR - Motorcycle Parts & Services. To complete your registration, please verify your email address by clicking the button below:</p>
+                            <p style="text-align: center;">
+                                <a href="${emailVerification}" style="display: inline-block; background-color: #007bff; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 10px; font-size: 16px;" target="_blank">Verify Email</a>
+                            </p>
+                            <p style="font-size: 16px; color: #555;">If you did not request this, you can safely ignore this email.</p>
+                            <p style="font-size: 16px; color: #555;">Please note: Your security is important to us. We will never ask you to share your password or other sensitive information via email.</p>
+                            <p style="font-size: 16px; color: #555;">Best regards,<br>teamPOOR - Motorcycle Parts & Services</p>
+                        </div>
+                    </div>
+                `;
                 await sendtoEmail(
                     user.email,
                     "teamPOOR - Verify Email",
@@ -139,18 +219,18 @@ const loginUser = async (req, res, next) => {
                     true,
                 );
                 // New Token will be sent as a response with status code
-                res.status(403).json({
+                return res.status(403).json({
                     success: false,
-                    message: "Token expired! new  one has been sent to your email.",
+                    message: "Token expired! New one has been sent to your email.",
                 });
             } else {
                 // already send  a verification link
                 return next(new ErrorHandler("Please check your email for verification link.", 403));
             }
-        } else {
-            // If all checks pass, send the token
-            sendToken(user, 200, res);
         }
+
+        // If all checks pass, send the token
+        sendToken(user, 200, res);
 
     } catch (error) {
         console.log(error);
