@@ -21,6 +21,7 @@ app.use(cookieParser());
 app.use(cors({
     origin: "https://frontend-team-poor-motorcycle-parts-and-services.vercel.app/",
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
 }));
 
 app.use('/api/v1',users);
