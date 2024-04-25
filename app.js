@@ -18,8 +18,20 @@ const appointments = require('./routes/appointment');
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(cookieParser());
+// app.use(cors({
+//     origin: "https://teampoor-motorcycle-parts-and-services.vercel.app",
+//     credentials: true,
+// }));
+
+const allowedOrigins = ['https://teampoor-motorcycle-parts-and-services.vercel.app'];
 app.use(cors({
-    origin: "https://teampoor-motorcycle-parts-and-services.vercel.app",
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
 }));
 
