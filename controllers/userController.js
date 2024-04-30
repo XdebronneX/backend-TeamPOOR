@@ -191,6 +191,8 @@ const logoutUser = async (req, res, next) => {
     res.cookie("token", "", {
       expires: new Date(0), // Set expiration date in the past
       httpOnly: true,
+      secure: true,
+      maxAge: 10 * 1000,
     });
 
     // res.cookie("token", "", {
