@@ -88,13 +88,11 @@ const registerUser = async (req, res, next) => {
     // res.status(201).json({ success: true ,message: 'Registered successfully!', user });
   } catch (error) {
     console.log(error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "User registration failed",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "User registration failed",
+      error: error.message,
+    });
   }
 };
 
@@ -185,16 +183,21 @@ const loginUser = async (req, res, next) => {
 const logoutUser = async (req, res, next) => {
   try {
     // Clear the token cookie by setting it to an empty string or omitting the value
-    // res.cookie("token", "", {
-    //     expires: new Date(0), // Set expiration date in the past
+    // res.cookie("token", null, {
+    //     expires: new Date(Date.now()), // Set expiration date in the past
     //     httpOnly: true,
     // });
 
     res.cookie("token", "", {
+      expires: new Date(0), // Set expiration date in the past
       httpOnly: true,
-      secure: true,
-      maxAge: 10 * 1000,
     });
+
+    // res.cookie("token", "", {
+    //   httpOnly: true,
+    //   secure: true,
+    //   maxAge: 10 * 1000,
+    // });
 
     // Send a response indicating successful logout
     res.status(200).json({ success: true, message: "Logged out successfully" });
