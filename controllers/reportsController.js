@@ -222,7 +222,7 @@ exports.mostRatedMechanics = async (req, res, next) => {
                     _id: 1,
                     totalRatings: 1,
                     averageRating: 1,
-                    mechanicName: "$mechanic.name", // Assuming name field exists in the users collection for mechanics
+                    mechanicName: "$mechanic.lastname", // Assuming name field exists in the users collection for mechanics
                 }
             }
         ]);
