@@ -7,7 +7,7 @@ const { createProduct, getAdminProducts,
     getSingleProduct, deleteProduct,
     updateProduct, updateStock, stockHistoryLogs ,createProductReview,
     getProductReviews, deleteReview } = require("../controllers/productController");
-const { productSales, mostPurchasedProduct, mostLoyalUser, mostPurchasedBrand, dailySales } = require("../controllers/reportsController");
+const { productSales, mostPurchasedProduct, mostLoyalUser, mostPurchasedBrand } = require("../controllers/reportsController");
 const { supplierHistoryLogs, suppliedProductHistory, getSingleSupplied } = require("../controllers/userController");
 const { isAuthenticatedUser, authorizeRoles } = require("../middlewares/auth")
 
@@ -37,7 +37,6 @@ router.get('/products/sales', productSales);
 router.get('/most/purchased-product', mostPurchasedProduct);
 router.get('/most/purchased-brand', mostPurchasedBrand);
 router.get('/most/loyal-user', mostLoyalUser);
-router.get('/today-sales', dailySales);
 
 
 module.exports = router;
