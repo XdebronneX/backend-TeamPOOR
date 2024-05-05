@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const upload = require("../utils/multer");
 
+const { mostRatedMechanics } = require("../controllers/reportsController");
 const { createService, getSingleService, getAllServices, updateService, deleteService, getAdminServices } = require('../controllers/serviceController')
 const { isAuthenticatedUser, authorizeRoles } = require("../middlewares/auth")
 
@@ -13,5 +14,5 @@ router.route('/admin/view/all/services').get(isAuthenticatedUser, authorizeRoles
 router.route('/admin/service/:id')
     .put(isAuthenticatedUser, authorizeRoles('admin'), upload.array('images', 10), updateService)
     .delete(isAuthenticatedUser, authorizeRoles('admin'), deleteService)
-
+router.get('/most/rated-mechanics', mostRatedMechanics);
 module.exports = router;

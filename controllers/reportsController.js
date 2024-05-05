@@ -1,6 +1,6 @@
 const OrderModel = require('../models/order')
 const OrderItemModel = require('../models/order-item')
-const ErrorHandler = require('../utils/errorHandler')
+const FeedbackModel = require('../models/feedback');
 
 exports.productSales = async (req, res, next) => {
     try {
@@ -186,6 +186,50 @@ exports.mostPurchasedBrand = async (req, res, next) => {
         res.status(200).json({
             success: true,
             mostPurchasedBrand: mostPurchasedBrand
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+};
+
+exports.mostRatedMechanics = async (req, res, next) => {
+    try {
+        const mostRatedMechanics = await FeedbackModel.aggregate([
+            {
+                $group: {
+                    _id: "$mechanic",
+                    totalRatings: { $sum: 1 }, // Count total ratings
+                    averageRating: { $avg: "$rating" }, // Calculate average rating
+                }
+            },
+            {
+                $lookup: {
+                    from: "users", // Assuming the name of the mechanics collection is "users"
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "mechanic"
+                }
+            },
+            {
+                $unwind: "$mechanic"
+            },
+            {
+                $sort: { averageRating: -1 } // Sort by average rating in descending order
+            },
+            {
+                $project: {
+                    _id: 1,
+                    totalRatings: 1,
+                    averageRating: 1,
+                    mechanicName: "$mechanic.name", // Assuming name field exists in the users collection for mechanics
+                }
+            }
+        ]);
+
+        res.status(200).json({
+            success: true,
+            mostRatedMechanics: mostRatedMechanics
         });
     } catch (error) {
         console.error(error);
