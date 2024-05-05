@@ -52,6 +52,62 @@ exports.productSales = async (req, res, next) => {
     }
 };
 
+exports.dailySales = async (req, res, next) => {
+    try {
+        const today = new Date();
+        const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()); // Start of today
+        const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1); // End of today
+
+        const dailySales = await OrderModel.aggregate([
+            {
+                $match: {
+                    dateOrdered: { $gte: startOfDay, $lt: endOfDay } // Match orders for today
+                }
+            },
+            {
+                $unwind: "$orderItems" // Unwind to deconstruct orderItems array
+            },
+            {
+                $lookup: {
+                    from: "orderitems", // The name of the orderitems collection
+                    localField: "orderItems",
+                    foreignField: "_id",
+                    as: "orderItem"
+                }
+            },
+            {
+                $unwind: "$orderItem"
+            },
+            {
+                $lookup: {
+                    from: "products", // The name of the products collection
+                    localField: "orderItem.product",
+                    foreignField: "_id",
+                    as: "product"
+                }
+            },
+            {
+                $unwind: "$product"
+            },
+            {
+                $group: {
+                    _id: { $dayOfMonth: "$dateOrdered" }, // Extract day from dateOrdered
+                    totalPrice: { $sum: { $multiply: ["$orderItem.quantity", "$product.price"] } } // Calculate total price only
+                }
+            },
+            { $sort: { "_id": 1 } } // Sort by day
+        ]);
+
+        res.status(200).json({
+            success: true,
+            dailySales
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+};
+
 exports.mostPurchasedProduct = async (req, res, next) => {
     try {
         const mostPurchasedProduct = await OrderItemModel.aggregate([
