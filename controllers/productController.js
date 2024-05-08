@@ -71,7 +71,12 @@ const getSingleProduct = async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(id))
         return res.status(404).json({ success: false, message: 'Product ID not found!' })
 
-    const product = await ProductModel.findById(id);
+    const product = await ProductModel.findById(id)
+    .populate(["brand", "category"])
+    .populate({
+      path: "reviews",
+      populate: { path: "user", model: "User" },
+    });
 
     if (!product)
         return res.status(404).json({ success: false, message: 'Product not found!' });
