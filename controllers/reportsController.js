@@ -52,60 +52,6 @@ exports.productSales = async (req, res, next) => {
     }
 };
 
-// exports.mostPurchasedProduct = async (req, res, next) => {
-//     try {
-//         const mostPurchasedProduct = await OrderItemModel.aggregate([
-//             {
-//                 $group: {
-//                     _id: "$product",
-//                     totalQuantity: { $sum: "$quantity" }
-//                 }
-//             },
-//             {
-//                 $lookup: {
-//                     from: "products",
-//                     localField: "_id",
-//                     foreignField: "_id",
-//                     as: "product"
-//                 }
-//             },
-//             {
-//                 $unwind: "$product"
-//             },
-//             {
-//                 $lookup: {
-//                     from: "brands",
-//                     localField: "product.brand",
-//                     foreignField: "_id",
-//                     as: "brand"
-//                 }
-//             },
-//             {
-//                 $unwind: "$brand"
-//             },
-//             {
-//                 $sort: { totalQuantity: -1 } // Sort by total quantity in descending order
-//             },
-//             {
-//                 $project: {
-//                     _id: "$product._id",
-//                     name: "$product.name",
-//                     brand: "$brand.name",
-//                     totalQuantity: 1
-//                 }
-//             }
-//         ]);
-
-//         res.status(200).json({
-//             success: true,
-//             mostPurchasedProduct: mostPurchasedProduct
-//         });
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ success: false, message: "Internal Server Error" });
-//     }
-// };
-
 exports.mostPurchasedProduct = async (req, res, next) => {
     try {
         const mostPurchasedProduct = await OrderItemModel.aggregate([
@@ -142,8 +88,9 @@ exports.mostPurchasedProduct = async (req, res, next) => {
             },
             {
                 $project: {
+                    _id: "$product._id",
                     name: "$product.name",
-                    brand: "$brand.name", // Replace _id with brand name
+                    brand: "$brand.name",
                     totalQuantity: 1
                 }
             }
@@ -158,6 +105,8 @@ exports.mostPurchasedProduct = async (req, res, next) => {
         res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 };
+
+
 
 exports.mostLoyalUser = async (req, res, next) => {
     try {
