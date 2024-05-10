@@ -19,7 +19,7 @@ router.put('/review', isAuthenticatedUser, createProductReview);
 router.get('/reviews', isAuthenticatedUser, getProductReviews)
 
 router.route('/reviews').delete(isAuthenticatedUser, authorizeRoles('admin'), deleteReview)
-router.route('/admin/view/all/products').get(isAuthenticatedUser, authorizeRoles('admin'), getAdminProducts);
+router.route('/view/all/products').get(isAuthenticatedUser, authorizeRoles('admin', 'supplier'), getAdminProducts);
 
 router.route('/admin/stock/:id').put(isAuthenticatedUser, authorizeRoles('admin'), updateStock)
 router.get('/admin/stock/history/logs', isAuthenticatedUser, authorizeRoles('admin'), stockHistoryLogs);
