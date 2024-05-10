@@ -235,7 +235,7 @@ exports.updateBooking = async (req, res, next) => {
     }
 };
 
-exports.cancelledBooking = async (req, res, next) => {
+exports.requestForBackjob = async (req, res, next) => {
     try {
         const booking = await AppointmentModel.findById(req.params.id);
 

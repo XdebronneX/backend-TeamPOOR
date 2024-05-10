@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const upload = require("../utils/multer");
-const { newBooking, myBookings, allBookings, getSingleBooking, getAllMechanics, assignTask, updateBooking, cancelledBooking, reschedBooking ,additional ,sendMechanicProof ,deleteBooking } = require("../controllers/serviceBookingController");
+const { newBooking, myBookings, allBookings, getSingleBooking, getAllMechanics, assignTask, updateBooking, requestForBackjob, reschedBooking ,additional ,sendMechanicProof ,deleteBooking } = require("../controllers/serviceBookingController");
 const { myAppointments, allMechanicReviews, reviewMechanic } = require("../controllers/mechanicController")
 const { isAuthenticatedUser, authorizeRoles } = require("../middlewares/auth");
 
@@ -17,7 +17,7 @@ router.route('/review/mechanic/:id').put(isAuthenticatedUser, reviewMechanic);
 
 router.route('/secretary/appointment/list').get(isAuthenticatedUser, authorizeRoles('secretary'), allBookings);
 router.route('/secretary/appointment/:id').put(isAuthenticatedUser, authorizeRoles('secretary'), updateBooking);
-router.route('/backjob/appointment/:id').put(isAuthenticatedUser, cancelledBooking);
+router.route('/backjob/appointment/:id').put(isAuthenticatedUser, requestForBackjob);
 router.route('/backjob/reschedule/appointment/:id').put(isAuthenticatedUser, reschedBooking);
 router.route('/secretary/assign/mechanic/:id').put(isAuthenticatedUser, assignTask);
 router.route('/secretary/additional/:id').put(isAuthenticatedUser, additional);
