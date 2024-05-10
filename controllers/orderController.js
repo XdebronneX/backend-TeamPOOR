@@ -490,9 +490,10 @@ exports.deleteOrder = async (req, res, next) => {
         return next(new ErrorHandler("No Order found with this ID", 404));
     }
 
-    await order.remove();
+    await order.deleteOne();
 
     res.status(200).json({
         success: true,
+        message: "Deleted successfully!",
     });
 };
