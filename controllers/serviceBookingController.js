@@ -278,7 +278,7 @@ exports.requestForBackjob = async (req, res, next) => {
 
         // Set back job comment from request body
         booking.backJob.comment = req.body.comment;
-        booking.backJob.createdAt = req.body.createdAt;
+        booking.backJob.createdAt = Date.now();
 
         // Save changes to the database
         await booking.save();
