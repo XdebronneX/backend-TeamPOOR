@@ -90,7 +90,6 @@ const appointmentSchema = mongoose.Schema({
         },
         createdAt: {
             type: Date,
-            default: Date.now
         }
     },
     totalPrice: {
