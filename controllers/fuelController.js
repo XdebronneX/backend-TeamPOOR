@@ -225,13 +225,9 @@ const createFuel = async (req, res, next) => {
                 console.log("Odometer value is below 1000 or not a multiple of 1000.");
             }
 
-            // Check if it's time for maintenance based on the last date column
-            const currentDate = new Date();
-            const lastFuelDate = new Date(date);
-            const maintenanceDeadline = new Date(lastFuelDate.getTime() + (1 * 60000)); // 1 minute from last fuel date
-
-            if (currentDate >= maintenanceDeadline) {
-                console.log("Monthly maintenance notification triggered immediately after fuel entry.");
+            // Set a timeout to trigger monthly maintenance notification after 1 minute
+            setTimeout(async () => {
+                console.log("Monthly maintenance notification triggered after 1 minute.");
 
                 let maintenanceNotification = new NotificationModel({
                     user: userId,
@@ -240,32 +236,7 @@ const createFuel = async (req, res, next) => {
                 });
 
                 maintenanceNotification = await maintenanceNotification.save();
-
-                let maintenanceEmailContent = `
-                    <div style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 15px; justify-content: center; align-items: center; height: 40vh;">
-                        <div style="background-color: #ffffff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); text-align: center;">
-                            <h1 style="font-size: 24px; color: #333; margin-bottom: 20px;">Monthly Maintenance Alert</h1>
-                            <p style="font-size: 16px; color: #555;">Hello,</p>
-                            <p style="font-size: 16px; color: #555;">It's time for monthly maintenance for your motorcycle <strong>${brand} - ${plateNumber}</strong>.</p>
-                            <p style="font-size: 16px; color: #555;">Please schedule maintenance as soon as possible.</p>
-                            <p style="font-size: 16px; color: #555;">Best regards,<br>TeamPoor</p>
-                        </div>
-                    </div>
-                `;
-
-                if (req.user.email) {
-                    await sendtoEmail(
-                        req.user.email,
-                        "Monthly Maintenance Alert",
-                        maintenanceEmailContent,
-                        true
-                    );
-
-                    console.log("Monthly maintenance email sent.");
-                } else {
-                    console.log("User email is not defined.");
-                }
-            }
+            }, 60000); // 1 minute timeout
         } catch (error) {
             console.error("Error sending notification:", error);
         }
