@@ -187,7 +187,7 @@ const createFuel = async (req, res, next) => {
         });
 
         try {
-            if ((odometer >= 1000 && odometer % 1000 === 0) || (new Date(date) - userMotorcycle.lastFuelDate) >= (3 * 60 * 1000)) {
+            if (odometer >= 1000 && odometer % 1000 === 0) {
                 // Get motorcycle details
                 const { brand, plateNumber } = userMotorcycle;
 
@@ -226,58 +226,28 @@ const createFuel = async (req, res, next) => {
                     console.log("User email is not defined.");
                 }
             } else {
-                console.log("Odometer value is below 1000 or last fuel log entry is within 3 minutes.");
+                console.log("Odometer value is below 1000.");
             }
 
-            // Check for monthly maintenance (set to 3 minutes for demo)
-            const now = new Date();
-            const lastMaintenanceDate = userMotorcycle.lastMaintenanceDate || now;
-            const timeSinceLastMaintenance = now - lastMaintenanceDate;
-            const threeMinutes = 3 * 60 * 1000; // 3 minutes for demo
-            if (timeSinceLastMaintenance >= threeMinutes) {
-                // Get motorcycle details
-                const { brand, plateNumber } = userMotorcycle;
+            // Check if it's time for maintenance based on the last date column
+            const lastDate = userMotorcycle.date;
+            const maintenanceDeadline = new Date(lastDate.getTime() + (3 * 60000)); // 3 minutes from last date
 
-                let notification = new NotificationModel({
-                    user: userId,
-                    title: "Monthly Maintenance Reminder",
-                    message: `Time for monthly maintenance! Your motorcycle ${brand} (${plateNumber}) needs maintenance.`,
-                });
+            if (new Date() >= maintenanceDeadline) {
+                console.log("Maintenance is due. Sending notification...");
 
-                notification = await notification.save();
-
-                // Save the last maintenance date
-                userMotorcycle.lastMaintenanceDate = now;
+                // Update the last date to the current time
+                userMotorcycle.date = new Date();
                 await userMotorcycle.save();
 
-                // HTML content for the email
-                let emailContent = `
-                    <div style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 15px; justify-content: center; align-items: center; height: 40vh;">
-                        <div style="background-color: #ffffff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); text-align: center;">
-                            <h1 style="font-size: 24px; color: #333; margin-bottom: 20px;">Monthly Maintenance Reminder</h1>
-                            <p style="font-size: 16px; color: #555;">Hello,</p>
-                            <p style="font-size: 16px; color: #555;">Your motorcycle <strong>${brand} - ${plateNumber}</strong> needs maintenance.</p>
-                            <p style="font-size: 16px; color: #555;">Please schedule the maintenance as soon as possible.</p>
-                            <p style="font-size: 16px; color: #555;">Best regards,<br>TeamPoor</p>
-                        </div>
-                    </div>
-                `;
+                // Send maintenance notification
+                const maintenanceNotification = new NotificationModel({
+                    user: userId,
+                    title: "Maintenance Reminder",
+                    message: "It's time for regular maintenance.",
+                });
 
-                // Send email notification
-                if (req.user.email) { // Check if user email is defined
-                    await sendtoEmail(
-                        req.user.email, // Use req.user.email
-                        "Monthly Maintenance Reminder",
-                        emailContent,
-                        true // Set the last parameter to true to indicate HTML content
-                    );
-
-                    console.log("Monthly maintenance email sent.");
-                } else {
-                    console.log("User email is not defined.");
-                }
-            } else {
-                console.log("Monthly maintenance not due yet.");
+                await maintenanceNotification.save();
             }
         } catch (error) {
             console.error("Error sending notification:", error);
@@ -292,8 +262,6 @@ const createFuel = async (req, res, next) => {
         return next(new ErrorHandler("Failed to create a new fuel tracker", 500));
     }
 };
-
-
 
 
 const getFuelDetails = async (req, res, next) => {
