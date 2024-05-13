@@ -341,7 +341,7 @@ const createFuel = async (req, res, next) => {
                 `;
 
                 if (req.user.email) {
-                    await sendToEmail(
+                    await sendtoEmail(
                         req.user.email,
                         "Monthly Maintenance Alert",
                         maintenanceEmailContent,
