@@ -111,11 +111,11 @@ const createFuel = async (req, res, next) => {
         });
 
         try {
-            // Get the last odometer reading for the current user from the database
-            const lastFuelEntry = await FuelModel.findOne({ user: userId }).sort({ date: -1 });
+            // Get all fuel entries for the current user
+            const userFuelLogs = await FuelModel.find({ user: userId }).sort({ date: 1 });
 
-            if (lastFuelEntry) {
-                const lastOdometer = lastFuelEntry.odometer;
+            if (userFuelLogs.length > 1) {
+                const lastOdometer = userFuelLogs[userFuelLogs.length - 2].odometer;
                 // Calculate the current milestone
                 const currentMilestone = Math.floor((odometer + lastOdometer) / 1000) * 1000;
 
@@ -177,7 +177,6 @@ const createFuel = async (req, res, next) => {
         return next(new ErrorHandler("Failed to create a new fuel tracker", 500));
     }
 };
-
 
 const getFuelDetails = async (req, res, next) => {
     try {
