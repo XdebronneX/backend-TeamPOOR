@@ -91,36 +91,24 @@ const createFuel = async (req, res, next) => {
         const { date, motorcycle, odometer, price, quantity, totalCost, fillingStation, notes } = req.body;
         const userId = req.user.id;
 
-        const userMotorcycle = await MotorcycleModel.findOne({ owner: userId });
+        // Find all motorcycles owned by the current user
+        const userMotorcycles = await MotorcycleModel.find({ owner: userId });
 
-        if (!userMotorcycle) {
-            return next(new ErrorHandler("User does not have a motorcycle", 404));
+        if (!userMotorcycles || userMotorcycles.length === 0) {
+            return next(new ErrorHandler("User does not have any motorcycles", 404));
         }
 
-        // Create the fuel entry
-        const newFuel = await FuelModel.create({
-            date,
-            odometer,
-            price,
-            quantity,
-            totalCost,
-            fillingStation,
-            notes,
-            user: userId,
-            motorcycle
-        });
+        // Loop through each motorcycle
+        for (const userMotorcycle of userMotorcycles) {
+            // Find the last fuel entry for this motorcycle
+            const lastFuelEntry = await FuelModel.findOne({ motorcycle: userMotorcycle._id }).sort({ date: -1 });
 
-        try {
-            // Get all fuel entries for the current user
-            const userFuelLogs = await FuelModel.find({ user: userId }).sort({ date: 1 });
+            if (lastFuelEntry) {
+                // Calculate the current milestone for this motorcycle
+                const currentMilestone = Math.floor((odometer + lastFuelEntry.odometer) / 1000) * 1000;
 
-            if (userFuelLogs.length > 1) {
-                const lastOdometer = userFuelLogs[userFuelLogs.length - 2].odometer;
-                // Calculate the current milestone
-                const currentMilestone = Math.floor((odometer + lastOdometer) / 1000) * 1000;
-
-                // Check if the current milestone is greater than the last milestone
-                if (currentMilestone > lastOdometer) {
+                // Check if the current milestone exceeds the last milestone
+                if (currentMilestone > lastFuelEntry.odometer) {
                     // Get motorcycle details
                     const { brand, plateNumber } = userMotorcycle;
 
@@ -141,7 +129,7 @@ const createFuel = async (req, res, next) => {
                                 <p style="font-size: 16px; color: #555;">Hello,</p>
                                 <p style="font-size: 16px; color: #555;">The odometer of your motorcycle <strong>${brand} - ${plateNumber}</strong> has reached ${currentMilestone} on ${new Date(date).toLocaleDateString()}.</p>
                                 <p style="font-size: 16px; color: #555;">Please check and perform the necessary maintenance.</p>
-                                <p style="font-size: 16px; color: #555;">Best regards,<br>Your Team</p>
+                                <p style="font-size: 16px; color: #555;">Best regards,<br>TeamPoor</p>
                             </div>
                         </div>
                     `;
@@ -160,23 +148,35 @@ const createFuel = async (req, res, next) => {
                         console.log("User email is not defined.");
                     }
                 } else {
-                    console.log("Odometer value is below the next milestone.");
+                    console.log("Odometer value is below the next milestone for this motorcycle.");
                 }
             } else {
-                console.log("No previous fuel entries found for the user.");
+                console.log("No previous fuel entry found for this motorcycle.");
             }
-        } catch (error) {
-            console.error("Error sending notification:", error);
+
+            // Create the fuel entry
+            await FuelModel.create({
+                date,
+                odometer,
+                price,
+                quantity,
+                totalCost,
+                fillingStation,
+                notes,
+                user: userId,
+                motorcycle: userMotorcycle._id
+            });
         }
 
         res.status(201).json({
             success: true,
-            newFuel,
+            message: "Fuel entries created successfully",
         });
     } catch (error) {
-        return next(new ErrorHandler("Failed to create a new fuel tracker", 500));
+        return next(new ErrorHandler("Failed to create fuel entries", 500));
     }
 };
+
 
 const getFuelDetails = async (req, res, next) => {
     try {
