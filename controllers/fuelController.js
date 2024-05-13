@@ -86,6 +86,82 @@ const NotificationModel = require("../models/notification");
 //     }
 // };
 
+//** Best as of May 13, 2024 */
+// const createFuel = async (req, res, next) => {
+//     try {
+//         const { date, motorcycle, odometer, price, quantity, totalCost, fillingStation, notes } = req.body;
+//         const userId = req.user.id;
+
+//         const userMotorcycle = await MotorcycleModel.findOne({ owner: userId });
+
+//         if (!userMotorcycle) {
+//             return next(new ErrorHandler("User does not have a motorcycle", 404));
+//         }
+
+//         const newFuel = await FuelModel.create({
+//             date,
+//             odometer,
+//             price,
+//             quantity,
+//             totalCost,
+//             fillingStation,
+//             notes,
+//             user: userId,
+//             motorcycle
+//         });
+
+//         try {
+//             if (odometer >= 1000 && odometer % 1000 === 0) {
+//                 const { brand, plateNumber } = userMotorcycle;
+
+//                 let notification = new NotificationModel({
+//                     user: userId,
+//                     title: "PMS Reminder",
+//                     message: `Time for PMS! Your motorcycle ${brand} (${plateNumber}) hit ${odometer} km.`,
+//                 });
+
+//                 notification = await notification.save();
+
+//                 let emailContent = `
+//                     <div style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 15px; justify-content: center; align-items: center; height: 40vh;">
+//                         <div style="background-color: #ffffff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); text-align: center;">
+//                             <h1 style="font-size: 24px; color: #333; margin-bottom: 20px;">Odometer Alert</h1>
+//                             <p style="font-size: 16px; color: #555;">Hello,</p>
+//                             <p style="font-size: 16px; color: #555;">The odometer of your motorcycle <strong>${brand} - ${plateNumber}</strong> has reached ${odometer} km on ${new Date(date).toLocaleDateString()}.</p>
+//                             <p style="font-size: 16px; color: #555;">Please check and perform the necessary maintenance.</p>
+//                             <p style="font-size: 16px; color: #555;">Best regards,<br>TeamPoor</p>
+//                         </div>
+//                     </div>
+//                 `;
+
+//                 if (req.user.email) {
+//                     await sendtoEmail(
+//                         req.user.email,
+//                         "PMS Alert",
+//                         emailContent,
+//                         true
+//                     );
+
+//                     console.log("Notification email sent.");
+//                 } else {
+//                     console.log("User email is not defined.");
+//                 }
+//             } else {
+//                 console.log("Odometer value is below 1000 or not a multiple of 1000.");
+//             }
+//         } catch (error) {
+//             console.error("Error sending notification:", error);
+//         }
+
+//         res.status(201).json({
+//             success: true,
+//             newFuel,
+//         });
+//     } catch (error) {
+//         return next(new ErrorHandler("Failed to create a new fuel tracker", 500));
+//     }
+// };
+
 const createFuel = async (req, res, next) => {
     try {
         const { date, motorcycle, odometer, price, quantity, totalCost, fillingStation, notes } = req.body;
@@ -110,7 +186,19 @@ const createFuel = async (req, res, next) => {
         });
 
         try {
-            if (odometer >= 1000 && odometer % 1000 === 0) {
+            const lastFuelEntry = await FuelModel.findOne({ user: userId }).sort({ date: -1 });
+
+            if (!lastFuelEntry) {
+                console.log("No previous fuel entries found for the user.");
+                return res.status(201).json({
+                    success: true,
+                    newFuel,
+                });
+            }
+
+            const timeDifference = Math.abs(new Date(date) - lastFuelEntry.date) / (1000 * 60); // in minutes
+
+            if (odometer >= 1000 || timeDifference >= 3) { // Checking if either condition is met
                 const { brand, plateNumber } = userMotorcycle;
 
                 let notification = new NotificationModel({
@@ -146,7 +234,7 @@ const createFuel = async (req, res, next) => {
                     console.log("User email is not defined.");
                 }
             } else {
-                console.log("Odometer value is below 1000 or not a multiple of 1000.");
+                console.log("Odometer value is below 1000 and time difference is less than 3 minutes.");
             }
         } catch (error) {
             console.error("Error sending notification:", error);
