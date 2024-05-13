@@ -161,7 +161,6 @@ const NotificationModel = require("../models/notification");
 //         return next(new ErrorHandler("Failed to create a new fuel tracker", 500));
 //     }
 // };
-
 const createFuel = async (req, res, next) => {
     try {
         const { date, motorcycle, odometer, price, quantity, totalCost, fillingStation, notes } = req.body;
@@ -229,6 +228,53 @@ const createFuel = async (req, res, next) => {
             } else {
                 console.log("Odometer value is below 1000 or last fuel log entry is within 3 minutes.");
             }
+
+            // Check for monthly maintenance
+            const now = new Date();
+            const lastMaintenanceDate = userMotorcycle.lastMaintenanceDate || now;
+            const timeSinceLastMaintenance = now - lastMaintenanceDate;
+            const oneMonth = 30 * 24 * 60 * 60 * 1000; // Assuming 30 days as one month
+            if (timeSinceLastMaintenance >= oneMonth) {
+                // Get motorcycle details
+                const { brand, plateNumber } = userMotorcycle;
+
+                let notification = new NotificationModel({
+                    user: userId,
+                    title: "Monthly Maintenance Reminder",
+                    message: `Time for monthly maintenance! Your motorcycle ${brand} (${plateNumber}) needs maintenance.`,
+                });
+
+                notification = await notification.save();
+
+                // HTML content for the email
+                let emailContent = `
+                    <div style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 15px; justify-content: center; align-items: center; height: 40vh;">
+                        <div style="background-color: #ffffff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); text-align: center;">
+                            <h1 style="font-size: 24px; color: #333; margin-bottom: 20px;">Monthly Maintenance Reminder</h1>
+                            <p style="font-size: 16px; color: #555;">Hello,</p>
+                            <p style="font-size: 16px; color: #555;">Your motorcycle <strong>${brand} - ${plateNumber}</strong> needs maintenance.</p>
+                            <p style="font-size: 16px; color: #555;">Please schedule the maintenance as soon as possible.</p>
+                            <p style="font-size: 16px; color: #555;">Best regards,<br>TeamPoor</p>
+                        </div>
+                    </div>
+                `;
+
+                // Send email notification
+                if (req.user.email) { // Check if user email is defined
+                    await sendtoEmail(
+                        req.user.email, // Use req.user.email
+                        "Monthly Maintenance Reminder",
+                        emailContent,
+                        true // Set the last parameter to true to indicate HTML content
+                    );
+
+                    console.log("Monthly maintenance email sent.");
+                } else {
+                    console.log("User email is not defined.");
+                }
+            } else {
+                console.log("Monthly maintenance not due yet.");
+            }
         } catch (error) {
             console.error("Error sending notification:", error);
         }
@@ -242,6 +288,7 @@ const createFuel = async (req, res, next) => {
         return next(new ErrorHandler("Failed to create a new fuel tracker", 500));
     }
 };
+
 
 
 
