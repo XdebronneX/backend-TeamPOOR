@@ -161,6 +161,7 @@ const NotificationModel = require("../models/notification");
 //         return next(new ErrorHandler("Failed to create a new fuel tracker", 500));
 //     }
 // };
+
 const createFuel = async (req, res, next) => {
     try {
         const { date, motorcycle, odometer, price, quantity, totalCost, fillingStation, notes } = req.body;
@@ -193,7 +194,6 @@ const createFuel = async (req, res, next) => {
                 let notification = new NotificationModel({
                     user: userId,
                     title: "PMS Reminder",
-                    // message: `Your motorcycle has reached 1500 kilometers on the odometer. It's time to schedule Preventive Maintenance Service (PMS).`,
                     message: `Time for PMS! Your motorcycle ${brand} (${plateNumber}) hit 1000 km.`,
                 });
 
@@ -229,12 +229,12 @@ const createFuel = async (req, res, next) => {
                 console.log("Odometer value is below 1000 or last fuel log entry is within 3 minutes.");
             }
 
-            // Check for monthly maintenance
+            // Check for monthly maintenance (set to 3 minutes for demo)
             const now = new Date();
             const lastMaintenanceDate = userMotorcycle.lastMaintenanceDate || now;
             const timeSinceLastMaintenance = now - lastMaintenanceDate;
-            const oneMonth = 30 * 24 * 60 * 60 * 1000; // Assuming 30 days as one month
-            if (timeSinceLastMaintenance >= oneMonth) {
+            const threeMinutes = 3 * 60 * 1000; // 3 minutes for demo
+            if (timeSinceLastMaintenance >= threeMinutes) {
                 // Get motorcycle details
                 const { brand, plateNumber } = userMotorcycle;
 
@@ -245,6 +245,10 @@ const createFuel = async (req, res, next) => {
                 });
 
                 notification = await notification.save();
+
+                // Save the last maintenance date
+                userMotorcycle.lastMaintenanceDate = now;
+                await userMotorcycle.save();
 
                 // HTML content for the email
                 let emailContent = `
