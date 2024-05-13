@@ -111,7 +111,7 @@ const createFuel = async (req, res, next) => {
         });
 
         try {
-            // Get the last odometer reading from the database
+            // Get the last odometer reading for the current user from the database
             const lastFuelEntry = await FuelModel.findOne({ user: userId }).sort({ date: -1 });
 
             if (lastFuelEntry) {
@@ -138,7 +138,7 @@ const createFuel = async (req, res, next) => {
                     console.log("Odometer value is below the next milestone.");
                 }
             } else {
-                console.log("No previous fuel entries found.");
+                console.log("No previous fuel entries found for the user.");
             }
         } catch (error) {
             console.error("Error sending notification:", error);
@@ -152,6 +152,7 @@ const createFuel = async (req, res, next) => {
         return next(new ErrorHandler("Failed to create a new fuel tracker", 500));
     }
 };
+
 
 const getFuelDetails = async (req, res, next) => {
     try {
