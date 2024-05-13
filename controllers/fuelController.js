@@ -110,57 +110,35 @@ const createFuel = async (req, res, next) => {
             motorcycle
         });
 
-        // Calculate the current milestone
-        const currentMilestone = Math.floor(odometer / 1000) * 1000;
-
         try {
-            // Fetch the last milestone from the database
-            const { lastMilestone } = await NotificationModel.findOne({ user: userId }) || { lastMilestone: 0 };
+            // Get the last odometer reading from the database
+            const lastFuelEntry = await FuelModel.findOne({ user: userId }).sort({ date: -1 });
 
-            if (currentMilestone > lastMilestone && currentMilestone >= 1000) {
-                // Get motorcycle details
-                const { brand, plateNumber } = userMotorcycle;
+            if (lastFuelEntry) {
+                const lastOdometer = lastFuelEntry.odometer;
+                // Calculate the current milestone
+                const currentMilestone = Math.floor((odometer + lastOdometer) / 1000) * 1000;
 
-                // Send notification
-                let notification = new NotificationModel({
-                    user: userId,
-                    title: "PMS Reminder",
-                    message: `Time for PMS! Your motorcycle ${brand} (${plateNumber}) hit ${currentMilestone} km.`,
-                });
+                // Check if the current milestone is greater than the last milestone
+                if (currentMilestone > lastOdometer) {
+                    // Get motorcycle details
+                    const { brand, plateNumber } = userMotorcycle;
 
-                await notification.save();
+                    // Send notification
+                    let notification = new NotificationModel({
+                        user: userId,
+                        title: "PMS Reminder",
+                        message: `Time for PMS! Your motorcycle ${brand} (${plateNumber}) hit ${currentMilestone} km.`,
+                    });
 
-                // Update last milestone in the database
-                await NotificationModel.updateOne({ user: userId }, { lastMilestone: currentMilestone });
+                    await notification.save();
 
-                // HTML content for the email
-                let emailContent = `
-                    <div style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 15px; justify-content: center; align-items: center; height: 40vh;">
-                        <div style="background-color: #ffffff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); text-align: center;">
-                            <h1 style="font-size: 24px; color: #333; margin-bottom: 20px;">Odometer Alert</h1>
-                            <p style="font-size: 16px; color: #555;">Hello,</p>
-                            <p style="font-size: 16px; color: #555;">The odometer of your motorcycle <strong>${brand} - ${plateNumber}</strong> has reached ${currentMilestone} on ${new Date(date).toLocaleDateString()}.</p>
-                            <p style="font-size: 16px; color: #555;">Please check and perform the necessary maintenance.</p>
-                            <p style="font-size: 16px; color: #555;">Best regards,<br>Your Team</p>
-                        </div>
-                    </div>
-                `;
-
-                // Send email notification
-                if (req.user.email) {
-                    await sendtoEmail(
-                        req.user.email,
-                        "PMS Alert",
-                        emailContent,
-                        true
-                    );
-
-                    console.log("Notification email sent.");
+                    console.log("Notification sent.");
                 } else {
-                    console.log("User email is not defined.");
+                    console.log("Odometer value is below the next milestone.");
                 }
             } else {
-                console.log("Odometer value is below the next milestone.");
+                console.log("No previous fuel entries found.");
             }
         } catch (error) {
             console.error("Error sending notification:", error);
@@ -174,8 +152,6 @@ const createFuel = async (req, res, next) => {
         return next(new ErrorHandler("Failed to create a new fuel tracker", 500));
     }
 };
-
-
 
 const getFuelDetails = async (req, res, next) => {
     try {
