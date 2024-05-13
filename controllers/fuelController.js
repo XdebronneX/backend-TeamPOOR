@@ -237,6 +237,8 @@ const createFuel = async (req, res, next) => {
 
                 maintenanceNotification = await maintenanceNotification.save();
             }, 60000); // 1 minute timeout
+
+            console.log("Fuel entry created successfully.");
         } catch (error) {
             console.error("Error sending notification:", error);
         }
