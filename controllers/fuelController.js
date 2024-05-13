@@ -133,7 +133,32 @@ const createFuel = async (req, res, next) => {
 
                     await notification.save();
 
-                    console.log("Notification sent.");
+                    // HTML content for the email
+                    let emailContent = `
+                        <div style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 15px; justify-content: center; align-items: center; height: 40vh;">
+                            <div style="background-color: #ffffff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); text-align: center;">
+                                <h1 style="font-size: 24px; color: #333; margin-bottom: 20px;">Odometer Alert</h1>
+                                <p style="font-size: 16px; color: #555;">Hello,</p>
+                                <p style="font-size: 16px; color: #555;">The odometer of your motorcycle <strong>${brand} - ${plateNumber}</strong> has reached ${currentMilestone} on ${new Date(date).toLocaleDateString()}.</p>
+                                <p style="font-size: 16px; color: #555;">Please check and perform the necessary maintenance.</p>
+                                <p style="font-size: 16px; color: #555;">Best regards,<br>Your Team</p>
+                            </div>
+                        </div>
+                    `;
+
+                    // Send email notification
+                    if (req.user.email) {
+                        await sendtoEmail(
+                            req.user.email,
+                            "PMS Alert",
+                            emailContent,
+                            true
+                        );
+
+                        console.log("Notification email sent.");
+                    } else {
+                        console.log("User email is not defined.");
+                    }
                 } else {
                     console.log("Odometer value is below the next milestone.");
                 }
