@@ -87,81 +87,6 @@ const NotificationModel = require("../models/notification");
 // };
 
 //** Best as of May 13, 2024 */
-// const createFuel = async (req, res, next) => {
-//     try {
-//         const { date, motorcycle, odometer, price, quantity, totalCost, fillingStation, notes } = req.body;
-//         const userId = req.user.id;
-
-//         const userMotorcycle = await MotorcycleModel.findOne({ owner: userId });
-
-//         if (!userMotorcycle) {
-//             return next(new ErrorHandler("User does not have a motorcycle", 404));
-//         }
-
-//         const newFuel = await FuelModel.create({
-//             date,
-//             odometer,
-//             price,
-//             quantity,
-//             totalCost,
-//             fillingStation,
-//             notes,
-//             user: userId,
-//             motorcycle
-//         });
-
-//         try {
-//             if (odometer >= 1000 && odometer % 1000 === 0) {
-//                 const { brand, plateNumber } = userMotorcycle;
-
-//                 let notification = new NotificationModel({
-//                     user: userId,
-//                     title: "PMS Reminder",
-//                     message: `Time for PMS! Your motorcycle ${brand} (${plateNumber}) hit ${odometer} km.`,
-//                 });
-
-//                 notification = await notification.save();
-
-//                 let emailContent = `
-//                     <div style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 15px; justify-content: center; align-items: center; height: 40vh;">
-//                         <div style="background-color: #ffffff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); text-align: center;">
-//                             <h1 style="font-size: 24px; color: #333; margin-bottom: 20px;">Odometer Alert</h1>
-//                             <p style="font-size: 16px; color: #555;">Hello,</p>
-//                             <p style="font-size: 16px; color: #555;">The odometer of your motorcycle <strong>${brand} - ${plateNumber}</strong> has reached ${odometer} km on ${new Date(date).toLocaleDateString()}.</p>
-//                             <p style="font-size: 16px; color: #555;">Please check and perform the necessary maintenance.</p>
-//                             <p style="font-size: 16px; color: #555;">Best regards,<br>TeamPoor</p>
-//                         </div>
-//                     </div>
-//                 `;
-
-//                 if (req.user.email) {
-//                     await sendtoEmail(
-//                         req.user.email,
-//                         "PMS Alert",
-//                         emailContent,
-//                         true
-//                     );
-
-//                     console.log("Notification email sent.");
-//                 } else {
-//                     console.log("User email is not defined.");
-//                 }
-//             } else {
-//                 console.log("Odometer value is below 1000 or not a multiple of 1000.");
-//             }
-//         } catch (error) {
-//             console.error("Error sending notification:", error);
-//         }
-
-//         res.status(201).json({
-//             success: true,
-//             newFuel,
-//         });
-//     } catch (error) {
-//         return next(new ErrorHandler("Failed to create a new fuel tracker", 500));
-//     }
-// };
-
 const createFuel = async (req, res, next) => {
     try {
         const { date, motorcycle, odometer, price, quantity, totalCost, fillingStation, notes } = req.body;
@@ -186,25 +111,43 @@ const createFuel = async (req, res, next) => {
         });
 
         try {
-            // Check if it's time for maintenance based on the last maintenance date
-            const lastDate = userMotorcycle.date;
-            const maintenanceDeadline = new Date(lastDate.getTime() + (1 * 60000)); // 1 minute from last date
+            if (odometer >= 1000 && odometer % 1000 === 0) {
+                const { brand, plateNumber } = userMotorcycle;
 
-            if (new Date() >= maintenanceDeadline) {
-                console.log("Maintenance is due. Sending notification...");
-
-                // Update the last date to the current time
-                userMotorcycle.date = new Date();
-                await userMotorcycle.save();
-
-                // Send maintenance notification
-                const maintenanceNotification = new NotificationModel({
+                let notification = new NotificationModel({
                     user: userId,
-                    title: "Maintenance Reminder",
-                    message: "It's time for regular maintenance.",
+                    title: "PMS Reminder",
+                    message: `Time for PMS! Your motorcycle ${brand} (${plateNumber}) hit ${odometer} km.`,
                 });
 
-                await maintenanceNotification.save();
+                notification = await notification.save();
+
+                let emailContent = `
+                    <div style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 15px; justify-content: center; align-items: center; height: 40vh;">
+                        <div style="background-color: #ffffff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); text-align: center;">
+                            <h1 style="font-size: 24px; color: #333; margin-bottom: 20px;">Odometer Alert</h1>
+                            <p style="font-size: 16px; color: #555;">Hello,</p>
+                            <p style="font-size: 16px; color: #555;">The odometer of your motorcycle <strong>${brand} - ${plateNumber}</strong> has reached ${odometer} km on ${new Date(date).toLocaleDateString()}.</p>
+                            <p style="font-size: 16px; color: #555;">Please check and perform the necessary maintenance.</p>
+                            <p style="font-size: 16px; color: #555;">Best regards,<br>TeamPoor</p>
+                        </div>
+                    </div>
+                `;
+
+                if (req.user.email) {
+                    await sendtoEmail(
+                        req.user.email,
+                        "PMS Alert",
+                        emailContent,
+                        true
+                    );
+
+                    console.log("Notification email sent.");
+                } else {
+                    console.log("User email is not defined.");
+                }
+            } else {
+                console.log("Odometer value is below 1000 or not a multiple of 1000.");
             }
         } catch (error) {
             console.error("Error sending notification:", error);
@@ -218,8 +161,6 @@ const createFuel = async (req, res, next) => {
         return next(new ErrorHandler("Failed to create a new fuel tracker", 500));
     }
 };
-
-
 
 
 const getFuelDetails = async (req, res, next) => {
