@@ -25,7 +25,7 @@ const NotificationModel = require("../models/notification");
 //             totalCost,
 //             fillingStation,
 //             notes,
-//             user: userId, // Set the owner to the user's ID
+//             user: userId,
 //             motorcycle
 //         });
 
@@ -51,7 +51,7 @@ const NotificationModel = require("../models/notification");
 //                             <p style="font-size: 16px; color: #555;">Hello,</p>
 //                             <p style="font-size: 16px; color: #555;">The odometer of your motorcycle <strong>${brand} - ${plateNumber}</strong> has reached 1000 on ${new Date(date).toLocaleDateString()}.</p>
 //                             <p style="font-size: 16px; color: #555;">Please check and perform the necessary maintenance.</p>
-//                             <p style="font-size: 16px; color: #555;">Best regards,<br>Your Team</p>
+//                             <p style="font-size: 16px; color: #555;">Best regards,<br>TeamPoor</p>
 //                         </div>
 //                     </div>
 //                 `;
@@ -91,89 +91,73 @@ const createFuel = async (req, res, next) => {
         const { date, motorcycle, odometer, price, quantity, totalCost, fillingStation, notes } = req.body;
         const userId = req.user.id;
 
-        // Find all motorcycles owned by the current user
-        const userMotorcycles = await MotorcycleModel.find({ owner: userId });
+        const userMotorcycle = await MotorcycleModel.findOne({ owner: userId });
 
-        if (!userMotorcycles || userMotorcycles.length === 0) {
-            return next(new ErrorHandler("User does not have any motorcycles", 404));
+        if (!userMotorcycle) {
+            return next(new ErrorHandler("User does not have a motorcycle", 404));
         }
 
-        // Loop through each motorcycle
-        for (const userMotorcycle of userMotorcycles) {
-            // Find the last fuel entry for this motorcycle
-            const lastFuelEntry = await FuelModel.findOne({ motorcycle: userMotorcycle._id }).sort({ date: -1 });
+        const newFuel = await FuelModel.create({
+            date,
+            odometer,
+            price,
+            quantity,
+            totalCost,
+            fillingStation,
+            notes,
+            user: userId,
+            motorcycle
+        });
 
-            if (lastFuelEntry) {
-                // Calculate the current milestone for this motorcycle
-                const currentMilestone = Math.floor((odometer + lastFuelEntry.odometer) / 1000) * 1000;
+        try {
+            if (odometer >= 1000 && odometer % 1000 === 0) {
+                const { brand, plateNumber } = userMotorcycle;
 
-                // Check if the current milestone exceeds the last milestone
-                if (currentMilestone > lastFuelEntry.odometer) {
-                    // Get motorcycle details
-                    const { brand, plateNumber } = userMotorcycle;
+                let notification = new NotificationModel({
+                    user: userId,
+                    title: "PMS Reminder",
+                    message: `Time for PMS! Your motorcycle ${brand} (${plateNumber}) hit ${odometer} km.`,
+                });
 
-                    // Send notification
-                    let notification = new NotificationModel({
-                        user: userId,
-                        title: "PMS Reminder",
-                        message: `Time for PMS! Your motorcycle ${brand} (${plateNumber}) hit ${currentMilestone} km.`,
-                    });
+                notification = await notification.save();
 
-                    await notification.save();
-
-                    // HTML content for the email
-                    let emailContent = `
-                        <div style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 15px; justify-content: center; align-items: center; height: 40vh;">
-                            <div style="background-color: #ffffff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); text-align: center;">
-                                <h1 style="font-size: 24px; color: #333; margin-bottom: 20px;">Odometer Alert</h1>
-                                <p style="font-size: 16px; color: #555;">Hello,</p>
-                                <p style="font-size: 16px; color: #555;">The odometer of your motorcycle <strong>${brand} - ${plateNumber}</strong> has reached ${currentMilestone} on ${new Date(date).toLocaleDateString()}.</p>
-                                <p style="font-size: 16px; color: #555;">Please check and perform the necessary maintenance.</p>
-                                <p style="font-size: 16px; color: #555;">Best regards,<br>TeamPoor</p>
-                            </div>
+                let emailContent = `
+                    <div style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 15px; justify-content: center; align-items: center; height: 40vh;">
+                        <div style="background-color: #ffffff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); text-align: center;">
+                            <h1 style="font-size: 24px; color: #333; margin-bottom: 20px;">Odometer Alert</h1>
+                            <p style="font-size: 16px; color: #555;">Hello,</p>
+                            <p style="font-size: 16px; color: #555;">The odometer of your motorcycle <strong>${brand} - ${plateNumber}</strong> has reached ${odometer} km on ${new Date(date).toLocaleDateString()}.</p>
+                            <p style="font-size: 16px; color: #555;">Please check and perform the necessary maintenance.</p>
+                            <p style="font-size: 16px; color: #555;">Best regards,<br>TeamPoor</p>
                         </div>
-                    `;
+                    </div>
+                `;
 
-                    // Send email notification
-                    if (req.user.email) {
-                        await sendtoEmail(
-                            req.user.email,
-                            "PMS Alert",
-                            emailContent,
-                            true
-                        );
+                if (req.user.email) {
+                    await sendtoEmail(
+                        req.user.email,
+                        "PMS Alert",
+                        emailContent,
+                        true
+                    );
 
-                        console.log("Notification email sent.");
-                    } else {
-                        console.log("User email is not defined.");
-                    }
+                    console.log("Notification email sent.");
                 } else {
-                    console.log("Odometer value is below the next milestone for this motorcycle.");
+                    console.log("User email is not defined.");
                 }
             } else {
-                console.log("No previous fuel entry found for this motorcycle.");
+                console.log("Odometer value is below 1000 or not a multiple of 1000.");
             }
-
-            // Create the fuel entry
-            await FuelModel.create({
-                date,
-                odometer,
-                price,
-                quantity,
-                totalCost,
-                fillingStation,
-                notes,
-                user: userId,
-                motorcycle: userMotorcycle._id
-            });
+        } catch (error) {
+            console.error("Error sending notification:", error);
         }
 
         res.status(201).json({
             success: true,
-            message: "Fuel entries created successfully",
+            newFuel,
         });
     } catch (error) {
-        return next(new ErrorHandler("Failed to create fuel entries", 500));
+        return next(new ErrorHandler("Failed to create a new fuel tracker", 500));
     }
 };
 
