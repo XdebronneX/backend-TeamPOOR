@@ -264,6 +264,7 @@ const createFuel = async (req, res, next) => {
 };
 
 
+
 const getFuelDetails = async (req, res, next) => {
     try {
         const fuel = await FuelModel.findById(req.params.id);
