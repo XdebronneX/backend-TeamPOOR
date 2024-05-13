@@ -97,6 +97,7 @@ const createFuel = async (req, res, next) => {
             return next(new ErrorHandler("User does not have a motorcycle", 404));
         }
 
+        // Create the fuel entry
         const newFuel = await FuelModel.create({
             date,
             odometer,
@@ -109,24 +110,25 @@ const createFuel = async (req, res, next) => {
             motorcycle
         });
 
+        // Calculate the current milestone
+        const currentMilestone = Math.floor(odometer / 1000) * 1000;
+
         try {
             // Fetch the last milestone from the database
-            let { lastMilestone } = await NotificationModel.findOne({ user: userId }) || { lastMilestone: 0 };
-
-            // Calculate the current milestone
-            const currentMilestone = Math.floor(odometer / 1000) * 1000;
+            const { lastMilestone } = await NotificationModel.findOne({ user: userId }) || { lastMilestone: 0 };
 
             if (currentMilestone > lastMilestone && currentMilestone >= 1000) {
                 // Get motorcycle details
                 const { brand, plateNumber } = userMotorcycle;
 
+                // Send notification
                 let notification = new NotificationModel({
                     user: userId,
                     title: "PMS Reminder",
                     message: `Time for PMS! Your motorcycle ${brand} (${plateNumber}) hit ${currentMilestone} km.`,
                 });
 
-                notification = await notification.save();
+                await notification.save();
 
                 // Update last milestone in the database
                 await NotificationModel.updateOne({ user: userId }, { lastMilestone: currentMilestone });
@@ -172,6 +174,7 @@ const createFuel = async (req, res, next) => {
         return next(new ErrorHandler("Failed to create a new fuel tracker", 500));
     }
 };
+
 
 
 const getFuelDetails = async (req, res, next) => {
