@@ -14,7 +14,7 @@ const fuels = require('./routes/fuel');
 const addresses = require('./routes/addresses');
 const services = require('./routes/service');
 const appointments = require('./routes/appointment');
-const allowedOrigins = ['https://teampoor-motorcycle-parts-and-services.vercel.app'];
+const allowedOrigins = ['https://teampoor-motorcycle-parts-and-services.online'];
 
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ limit: "20mb", extended: true }));
