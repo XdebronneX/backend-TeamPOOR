@@ -128,8 +128,7 @@ exports.newOrder = async (req, res, next) => {
         // Check if there were validation errors
         if (validationErrors.length > 0) {
             console.log(validationErrors);
-            // return res.status(400).send(validationErrors.join("\n"));
-            return res.status(400).json({ errors: validationErrors });
+            return res.status(400).send(validationErrors.join("\n"));
         }
 
         const initialOrderStatus = {
