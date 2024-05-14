@@ -83,7 +83,7 @@ const registerUser = async (req, res, next) => {
 
     res
       .status(200)
-      .json({ success: true, message: `Email sent to: ${user.email}` });
+      .json({ success: true, message: `Email sent to: ${user.email}. wait at least 3-5 minutes` });
 
     // res.status(201).json({ success: true ,message: 'Registered successfully!', user });
   } catch (error) {
