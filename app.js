@@ -16,7 +16,7 @@ const services = require('./routes/service');
 const appointments = require('./routes/appointment');
 const allowedOrigins = ['https://teampoor-motorcycle-parts-and-services.vercel.app'];
 
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: "100mb", extended: true }));
 app.use(cookieParser());
 // app.use(cors({
