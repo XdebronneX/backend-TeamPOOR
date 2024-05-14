@@ -115,7 +115,7 @@ const getAllProducts = async (req, res, next) => {
 //**Get all products by admin */
 const getAdminProducts = async (req, res, next) => {
     try {
-        const products = await ProductModel.find().populate("brand");
+        const products = await ProductModel.find().populate("brand").sort({ _id: -1 });
         const totalProducts = await ProductModel.countDocuments();
 
         return res.status(200).json({
@@ -131,6 +131,7 @@ const getAdminProducts = async (req, res, next) => {
         });
     }
 };
+
 
 //** Price Change History */
 const priceChangeHistory = async (req, res) => {
