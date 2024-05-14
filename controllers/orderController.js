@@ -8,6 +8,7 @@ const axios = require("axios");
 const sendtoEmail = require("../utils/sendtoEmail");
 const crypto = require("crypto");
 const NotificationModel = require("../models/notification");
+const mongoose = require('mongoose');
 
 const handlePayMongo = async (orderItemsDetails, temporaryLink) => {
     try {
