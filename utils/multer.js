@@ -3,7 +3,7 @@ const path = require("path");
 const ErrorHandler = require("./errorHandler");
 
 module.exports = multer({
-    limits: { fieldSize: 10 * 1024 * 1024 },
+    limits: { fieldSize: 20 * 1024 * 1024 },
     storage: multer.diskStorage({}),
     fileFilter: (req, file, cb) => {
         let ext = path.extname(file.originalname).toLowerCase();
