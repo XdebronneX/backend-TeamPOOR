@@ -192,6 +192,7 @@ const logoutUser = async (req, res, next) => {
       expires: new Date(0), // Set expiration date in the past
       httpOnly: true,
       secure: true,
+      sameSite: "none",
       maxAge: 10 * 1000,
     });
 
