@@ -20,7 +20,7 @@ router.route('/secretary/appointment/:id').put(isAuthenticatedUser, authorizeRol
 router.route('/backjob/appointment/:id').put(isAuthenticatedUser, requestForBackjob);
 router.route('/backjob/reschedule/appointment/:id').put(isAuthenticatedUser, reschedBooking);
 router.route('/secretary/assign/mechanic/:id').put(isAuthenticatedUser, assignTask);
-router.route('/secretary/additional/:id').put(isAuthenticatedUser, additional);
+router.route('/services/additional/:id').put(isAuthenticatedUser, additional);
 
 router.route('/admin/appointment/list').get(isAuthenticatedUser, authorizeRoles('admin'), allBookings);
 router.route('/admin/appointment/:id')
