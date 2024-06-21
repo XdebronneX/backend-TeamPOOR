@@ -466,6 +466,208 @@ exports.additional = async (req, res, next) => {
     }
 };
 
+//** 1st attempt */
+// exports.additionalServices = async (req, res, next) => {
+//     try {
+//         const { id } = req.params;
+//         const appointment = await AppointmentModel.findById(id);
+
+//         if (!appointment) {
+//             return res.status(404).json({ success: false, message: 'Appointment not found' });
+//         }
+
+//         const services = req.body.services;
+//         const validServices = await Promise.all(services.map(async (service) => {
+//             const foundService = await ServiceModel.findById(service.serviceId);
+//             if (!foundService) {
+//                 throw new Error(`Service ${service.serviceId} not found`);
+//             }
+//             return {
+//                 service: foundService._id,
+//                 serviceName: foundService.name,
+//                 servicePrice: foundService.price,
+//             };
+//         }));
+
+//         // Map validServices to create AppointmentService documents
+//         const appointmentServices = await Promise.all(validServices.map(async (service) => {
+//             return await AppointmentServiceModel.create({
+//                 service: service.service,
+//                 note: [], // Assuming note is an empty array initially
+//             });
+//         }));
+
+//         console.log("Appointment services:", appointmentServices);
+
+//         const servicePrices = validServices.map(service => service.servicePrice);
+
+//         console.log("Service prices:", servicePrices);
+
+//         // Ensure all service prices are valid numbers
+//         if (servicePrices.some(price => price === undefined || isNaN(price))) {
+//             return res.status(400).json({ success: false, message: 'Invalid service prices' });
+//         }
+
+//         const totalPriceSum = servicePrices.reduce((total, price) => total + price, 0);
+
+//         console.log("Total price sum:", totalPriceSum);
+
+//         let totalServicePrice = appointment.totalPrice || 0;
+
+//         console.log("Previous total price:", totalServicePrice);
+
+//         totalServicePrice += totalPriceSum;
+
+//         console.log("Updated total price:", totalServicePrice);
+
+//         // Check if totalServicePrice is a valid number
+//         if (isNaN(totalServicePrice)) {
+//             return res.status(400).json({ success: false, message: 'Invalid total price calculation' });
+//         }
+
+//         appointment.totalPrice = totalServicePrice;
+//         await appointment.save();
+
+//         res.status(200).json({
+//             success: true,
+//             appointment: appointment
+//         });
+//     } catch (error) {
+//         console.log(error);
+//         return next(new Error('Error updating services'));
+//     }
+// };
+
+//** 2nd attempt */
+exports.additionalServices = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const appointment = await AppointmentModel.findById(id);
+
+        if (!appointment) {
+            return res.status(404).json({ success: false, message: 'Appointment not found' });
+        }
+
+        const services = req.body.services;
+
+        const validServices = await Promise.all(services.map(async (service) => {
+            const foundService = await ServiceModel.findById(service.serviceId);
+            if (!foundService) {
+                throw new Error(`Service ${service.serviceId} not found`);
+            }
+            return {
+                service: foundService._id,
+                serviceName: foundService.name,
+                servicePrice: foundService.price,
+            };
+        }));
+
+        // Map validServices to create AppointmentService documents
+        const appointmentServices = await Promise.all(validServices.map(async (service) => {
+            return await AppointmentServiceModel.create({
+                service: service.service,
+                note: [], // Assuming note is an empty array initially
+            });
+        }));
+
+        console.log("Appointment services:", appointmentServices);
+
+        const servicePrices = validServices.map(service => service.servicePrice);
+
+        console.log("Service prices:", servicePrices);
+
+        // Ensure all service prices are valid numbers
+        if (servicePrices.some(price => price === undefined || isNaN(price))) {
+            return res.status(400).json({ success: false, message: 'Invalid service prices' });
+        }
+
+        const totalPriceSum = servicePrices.reduce((total, price) => total + price, 0);
+
+        console.log("Total price sum:", totalPriceSum);
+
+        let totalServicePrice = appointment.totalPrice || 0;
+
+        console.log("Previous total price:", totalServicePrice);
+
+        totalServicePrice += totalPriceSum;
+
+        console.log("Updated total price:", totalServicePrice);
+
+        // Check if totalServicePrice is a valid number
+        if (isNaN(totalServicePrice)) {
+            return res.status(400).json({ success: false, message: 'Invalid total price calculation' });
+        }
+
+        appointment.totalPrice = totalServicePrice;
+
+        // Update appointmentServices
+        appointment.appointmentServices = [...appointment.appointmentServices, ...appointmentServices.map(service => service._id)];
+
+        await appointment.save();
+
+        res.status(200).json({
+            success: true,
+            appointment: appointment
+        });
+    } catch (error) {
+        console.log(error);
+        return next(new Error('Error updating services'));
+    }
+};
+
+//** working */
+exports.deleteAddedService = async (req, res, next) => {
+    try {
+        const { serviceId, id } = req.params;
+
+        // Find the appointment by ID and populate the appointmentServices with the service details
+        const appointment = await AppointmentModel.findById(id).populate({
+            path: 'appointmentServices',
+            populate: {
+                path: 'service',
+                model: 'Service'
+            }
+        });
+
+        if (!appointment) {
+            return res.status(404).json({ success: false, error: 'Appointment not found' });
+        }
+
+        // Find the appointment service by serviceId
+        const appointmentService = appointment.appointmentServices.find(service => service._id.toString() === serviceId);
+
+        if (!appointmentService) {
+            return res.status(404).json({ success: false, error: 'Service not found in appointment services' });
+        }
+
+        // Check if the service property exists on the appointmentService
+        if (!appointmentService.service || appointmentService.service.price === undefined) {
+            return res.status(500).json({ success: false, error: 'Service price not found' });
+        }
+
+        // Get the price of the service being removed
+        const servicePrice = appointmentService.service.price;
+
+        // Remove the service from appointmentServices array
+        appointment.appointmentServices = appointment.appointmentServices.filter(service => service._id.toString() !== serviceId);
+
+        // Update the totalPrice by subtracting the servicePrice
+        appointment.totalPrice -= servicePrice;
+
+        // Save the updated appointment
+        await appointment.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Service removed from appointment successfully',
+            appointment
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+
 exports.deleteBooking = async (req, res, next) => {
     const booking = await AppointmentModel.findById(req.params.id);
 

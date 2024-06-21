@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const upload = require("../utils/multer");
-const { newBooking, myBookings, allBookings, getSingleBooking, getAllMechanics, assignTask, updateBooking, requestForBackjob, reschedBooking ,additional ,sendMechanicProof ,deleteBooking } = require("../controllers/serviceBookingController");
+const { newBooking, myBookings, allBookings, getSingleBooking, getAllMechanics, assignTask, updateBooking, requestForBackjob, reschedBooking, additional, additionalServices, deleteAddedService, sendMechanicProof ,deleteBooking } = require("../controllers/serviceBookingController");
 const { myAppointments, allMechanicReviews, reviewMechanic } = require("../controllers/mechanicController")
 const { isAuthenticatedUser, authorizeRoles } = require("../middlewares/auth");
 
@@ -20,7 +20,9 @@ router.route('/secretary/appointment/:id').put(isAuthenticatedUser, authorizeRol
 router.route('/backjob/appointment/:id').put(isAuthenticatedUser, requestForBackjob);
 router.route('/backjob/reschedule/appointment/:id').put(isAuthenticatedUser, reschedBooking);
 router.route('/secretary/assign/mechanic/:id').put(isAuthenticatedUser, assignTask);
-router.route('/services/additional/:id').put(isAuthenticatedUser, additional);
+router.route('/parts/additional/:id').put(isAuthenticatedUser, additional);
+router.route('/services/additional/:id').put(isAuthenticatedUser, additionalServices)
+router.route('/appointment/:id/services/:serviceId').delete(isAuthenticatedUser, deleteAddedService);
 
 router.route('/admin/appointment/list').get(isAuthenticatedUser, authorizeRoles('admin'), allBookings);
 router.route('/admin/appointment/:id')

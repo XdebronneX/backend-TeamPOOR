@@ -1,6 +1,6 @@
 const express = require('express');
 const cookieParser = require('cookie-parser') // to get the user profile
-const cors = require('cors')
+var cors = require('cors')
 const app = express();
 
 const errorMiddleware = require('./middlewares/errors');
@@ -15,14 +15,15 @@ const addresses = require('./routes/addresses');
 const services = require('./routes/service');
 const appointments = require('./routes/appointment');
 const allowedOrigins = ['https://www.teampoor-motorcycle-parts-and-services.online'];
-
+// app.use(cors());
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ limit: "20mb", extended: true }));
 app.use(cookieParser());
 // app.use(cors({
-//     origin: ["https://teampoor-motorcycle-parts-and-services.vercel.app", "http://localhost:3000"],
+//     origin: "http://localhost:3000",
 //     credentials: true,
 // }));
+// app.use(cors());
 app.use(cors({
     origin: (origin, callback) => {
         if (!origin || allowedOrigins.includes(origin)) {
