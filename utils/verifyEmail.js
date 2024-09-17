@@ -20,16 +20,13 @@ const verifyEmail = async (email, subject, text, isHTML = false) => {
         };
 
         if (isHTML) {
-            // If isHTML is true, set the email content as HTML
             mailOptions.html = text;
         } else {
-            // If isHTML is false, use plain text content
             mailOptions.text = text;
         }
 
         await transporter.sendMail(mailOptions);
     } catch (error) {
-        // Handle any errors that occur during email sending
         console.error("Error sending email:", error);
     }
 }

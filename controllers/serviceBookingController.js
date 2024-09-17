@@ -10,16 +10,12 @@ exports.newBooking = async (req, res, next) => {
     try {
         const validationErrors = [];
 
-        // console.log("reeeeq", req.body);
-        // Now, you can safely proceed with mapping and further operations
         const appointmentServiceIds = await Promise.all(
             req.body.appointmentServices.cartServices.map(async (appointmentService) => {
                 let newServiceItem = new AppointmentServiceModel({
                     service: appointmentService._id
                 });
 
-
-                // Check if the service exists
                 const foundService = await ServiceModel.findById(appointmentService._id);
 
                 if (!foundService) {
@@ -27,7 +23,6 @@ exports.newBooking = async (req, res, next) => {
                     return null;
                 }
 
-                // Check if the service is available
                 if (!foundService.isAvailable) {
                     validationErrors.push(`The service ${foundService.name} is no longer available.`);
                     return null;
@@ -38,9 +33,6 @@ exports.newBooking = async (req, res, next) => {
             })
         );
 
-
-
-        // Check if there were validation errors
         if (validationErrors.length > 0) {
             return res.status(400).json({
                 success: false,
@@ -48,14 +40,12 @@ exports.newBooking = async (req, res, next) => {
             });
         }
 
-        // Create initial appointment status
         const initialAppointmentStatus = {
-            status: 'PENDING', // Extract status from the object
-            timestamp: new Date(), // Extract timestamp from the object
-            message: 'Appointment scheduled successfully. Awaiting confirmation.', // Extract message from the object
+            status: 'PENDING',
+            timestamp: new Date(),
+            message: 'Appointment scheduled successfully. Awaiting confirmation.',
         };
 
-        // Create the appointment
         let appointment = new AppointmentModel({
             appointmentServices: appointmentServiceIds,
             // mechanic: req.body.mechanic,
@@ -108,11 +98,9 @@ exports.myBookings = async (req, res, next) => {
     }
 };
 
-//** Admin control */
 exports.allBookings = async (req, res, next) => {
     try {
         const allbookings = await AppointmentModel.find().populate('mechanic', 'firstname lastname');
-        // console.log(allbookings);
         let totalAmountServices = 0;
 
         allbookings.forEach((booking) => {
@@ -160,7 +148,6 @@ exports.assignTask = async (req, res, next) => {
     try {
         const booking = await AppointmentModel.findById(req.params.id);
 
-        // Update the mechanic if provided
         if (req.body.mechanic) {
             booking.mechanic = req.body.mechanic;
         }
@@ -212,7 +199,6 @@ exports.updateBooking = async (req, res, next) => {
             message: message,
         };
 
-        // Update the appointment status
         booking.appointmentStatus.push(newAppointmentStatus);
 
         await booking.save();
@@ -268,22 +254,18 @@ exports.requestForBackjob = async (req, res, next) => {
         }
 
         const initialAppointmentStatus = {
-            status: 'BACKJOBPENDING', // Extract status from the object
-            timestamp: Date.now(), // Extract timestamp from the object
-            message: 'Back job requested. We will process your request shortly.', // Extract message from the object
+            status: 'BACKJOBPENDING',
+            timestamp: Date.now(),
+            message: 'Back job requested. We will process your request shortly.',
         };
 
-        // Update the appointment status
         booking.appointmentStatus.push(initialAppointmentStatus);
 
-        // Set back job comment from request body
         booking.backJob.comment = req.body.comment;
         booking.backJob.createdAt = Date.now();
 
-        // Save changes to the database
         await booking.save();
 
-        // Send response
         res.status(200).json({
             success: true,
             booking: booking
@@ -299,7 +281,6 @@ exports.reschedBooking = async (req, res, next) => {
     try {
         const booking = await AppointmentModel.findById(req.params.id);
 
-        // Update the appointmentDate and timeSlot if they're provided in the request body
         if (req.body.appointmentDate) {
             booking.appointmentDate = req.body.appointmentDate;
         }
@@ -307,10 +288,8 @@ exports.reschedBooking = async (req, res, next) => {
             booking.timeSlot = req.body.timeSlot;
         }
 
-        // Save changes to the database
         await booking.save();
 
-        // Send response
         res.status(200).json({
             success: true,
             booking: booking
@@ -322,11 +301,9 @@ exports.reschedBooking = async (req, res, next) => {
     }
 };
 
-
 exports.sendMechanicProof = async (req, res, next) => {
     const newProofData = {};
 
-    /** Update Mechanic Proof */
     if (req.body.mechanicProof !== "") {
         const appointment = await AppointmentModel.findById(req.params.id);
 
@@ -367,10 +344,8 @@ exports.sendMechanicProof = async (req, res, next) => {
 
 exports.getAllMechanics = async (req, res, next) => {
     try {
-        // Fetch users with the role of mechanic
         const mechanics = await UserModel.find({ role: 'mechanic' });
 
-        // Count total users with the role of mechanic
         const totalMechanics = mechanics.length;
 
         return res.status(200).json({
@@ -466,79 +441,6 @@ exports.additional = async (req, res, next) => {
     }
 };
 
-//** 1st attempt */
-// exports.additionalServices = async (req, res, next) => {
-//     try {
-//         const { id } = req.params;
-//         const appointment = await AppointmentModel.findById(id);
-
-//         if (!appointment) {
-//             return res.status(404).json({ success: false, message: 'Appointment not found' });
-//         }
-
-//         const services = req.body.services;
-//         const validServices = await Promise.all(services.map(async (service) => {
-//             const foundService = await ServiceModel.findById(service.serviceId);
-//             if (!foundService) {
-//                 throw new Error(`Service ${service.serviceId} not found`);
-//             }
-//             return {
-//                 service: foundService._id,
-//                 serviceName: foundService.name,
-//                 servicePrice: foundService.price,
-//             };
-//         }));
-
-//         // Map validServices to create AppointmentService documents
-//         const appointmentServices = await Promise.all(validServices.map(async (service) => {
-//             return await AppointmentServiceModel.create({
-//                 service: service.service,
-//                 note: [], // Assuming note is an empty array initially
-//             });
-//         }));
-
-//         console.log("Appointment services:", appointmentServices);
-
-//         const servicePrices = validServices.map(service => service.servicePrice);
-
-//         console.log("Service prices:", servicePrices);
-
-//         // Ensure all service prices are valid numbers
-//         if (servicePrices.some(price => price === undefined || isNaN(price))) {
-//             return res.status(400).json({ success: false, message: 'Invalid service prices' });
-//         }
-
-//         const totalPriceSum = servicePrices.reduce((total, price) => total + price, 0);
-
-//         console.log("Total price sum:", totalPriceSum);
-
-//         let totalServicePrice = appointment.totalPrice || 0;
-
-//         console.log("Previous total price:", totalServicePrice);
-
-//         totalServicePrice += totalPriceSum;
-
-//         console.log("Updated total price:", totalServicePrice);
-
-//         // Check if totalServicePrice is a valid number
-//         if (isNaN(totalServicePrice)) {
-//             return res.status(400).json({ success: false, message: 'Invalid total price calculation' });
-//         }
-
-//         appointment.totalPrice = totalServicePrice;
-//         await appointment.save();
-
-//         res.status(200).json({
-//             success: true,
-//             appointment: appointment
-//         });
-//     } catch (error) {
-//         console.log(error);
-//         return next(new Error('Error updating services'));
-//     }
-// };
-
-//** 2nd attempt */
 exports.additionalServices = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -562,11 +464,10 @@ exports.additionalServices = async (req, res, next) => {
             };
         }));
 
-        // Map validServices to create AppointmentService documents
         const appointmentServices = await Promise.all(validServices.map(async (service) => {
             return await AppointmentServiceModel.create({
                 service: service.service,
-                note: [], // Assuming note is an empty array initially
+                note: [],
             });
         }));
 
@@ -615,12 +516,10 @@ exports.additionalServices = async (req, res, next) => {
     }
 };
 
-//** working */
 exports.deleteAddedService = async (req, res, next) => {
     try {
         const { serviceId, id } = req.params;
 
-        // Find the appointment by ID and populate the appointmentServices with the service details
         const appointment = await AppointmentModel.findById(id).populate({
             path: 'appointmentServices',
             populate: {
@@ -633,28 +532,20 @@ exports.deleteAddedService = async (req, res, next) => {
             return res.status(404).json({ success: false, error: 'Appointment not found' });
         }
 
-        // Find the appointment service by serviceId
         const appointmentService = appointment.appointmentServices.find(service => service._id.toString() === serviceId);
 
         if (!appointmentService) {
             return res.status(404).json({ success: false, error: 'Service not found in appointment services' });
         }
 
-        // Check if the service property exists on the appointmentService
         if (!appointmentService.service || appointmentService.service.price === undefined) {
             return res.status(500).json({ success: false, error: 'Service price not found' });
         }
 
-        // Get the price of the service being removed
         const servicePrice = appointmentService.service.price;
-
-        // Remove the service from appointmentServices array
         appointment.appointmentServices = appointment.appointmentServices.filter(service => service._id.toString() !== serviceId);
-
-        // Update the totalPrice by subtracting the servicePrice
         appointment.totalPrice -= servicePrice;
 
-        // Save the updated appointment
         await appointment.save();
 
         res.status(200).json({
@@ -666,7 +557,6 @@ exports.deleteAddedService = async (req, res, next) => {
         next(error);
     }
 };
-
 
 exports.deleteBooking = async (req, res, next) => {
     const booking = await AppointmentModel.findById(req.params.id);

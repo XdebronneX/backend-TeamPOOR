@@ -2,7 +2,6 @@ const UserModel = require('../models/user')
 const jwt = require("jsonwebtoken");
 const ErrorHandler = require("../utils/errorHandler");
 
-// Checks if user is authenticated or not
 exports.isAuthenticatedUser = async (req, res, next) => {
     const { token } = req.cookies;
 
@@ -18,7 +17,7 @@ exports.isAuthenticatedUser = async (req, res, next) => {
         }
         next();
     } catch (err) {
-        // Handle any errors that occur during token verification
+        console.log(err);
         return next(new ErrorHandler('Invalid token. Please login again.', 401));
     }
 };

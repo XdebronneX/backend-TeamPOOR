@@ -5,13 +5,10 @@ const mongoose = require("mongoose");
 const APIFeatures = require('../utils/apiFeatures')
 const PriceHistoryModel = require("../models/priceHistory")
 
-/** Create Product by admin */
 const createProduct = async (req, res, next) => {
     try {
-        // Ensure images is an array
         let images = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
 
-        // Upload images to Cloudinary
         const imagesLinks = await Promise.all(images.map(async (image) => {
             const result = await cloudinary.v2.uploader.upload(image, {
                 folder: 'products'
@@ -23,22 +20,16 @@ const createProduct = async (req, res, next) => {
             };
         }));
 
-        // Update req.body with the Cloudinary image details
         req.body.images = imagesLinks;
 
-        // Create the product in the database
         let product = await ProductModel.create(req.body);
 
-        // Fetch the created product with populated brand field
         product = await ProductModel.findById(product._id).populate("brand");
 
-        // Initialize stock change to the initial stock value of the product
         const stockChange = product.stock;
 
-        // Fetch user information from the request (or wherever it's available)
-        const user = req.user; // Adjust according to your authentication mechanism
+        const user = req.user;
 
-        // Log the initial stock in the stock history
         product.stockLogs.push({
             name: product.name,
             brand: product.brand.name,
@@ -47,17 +38,15 @@ const createProduct = async (req, res, next) => {
             by: `${user.firstname} - ${user.role}`,
         });
 
-        // Save the product after updating the stock history
         await product.save();
 
-        // Respond with the created product
         res.status(201).json({
             success: true,
             product
         });
     } catch (error) {
-        // Handle errors and respond with a meaningful message
-        console.error(error);
+
+        console.log(error);
         res.status(500).json({
             success: false,
             message: 'Failed to create product'
@@ -72,11 +61,11 @@ const getSingleProduct = async (req, res, next) => {
         return res.status(404).json({ success: false, message: 'Product ID not found!' })
 
     const product = await ProductModel.findById(id)
-    .populate(["brand", "category"])
-    .populate({
-      path: "reviews",
-      populate: { path: "user", model: "User" },
-    });
+        .populate(["brand", "category"])
+        .populate({
+            path: "reviews",
+            populate: { path: "user", model: "User" },
+        });
 
     if (!product)
         return res.status(404).json({ success: false, message: 'Product not found!' });
@@ -84,13 +73,11 @@ const getSingleProduct = async (req, res, next) => {
     return res.status(202).json({ success: true, product })
 }
 
-//** Fetch all products */ 
+
 const getAllProducts = async (req, res, next) => {
     try {
         console.log(req.query);
-        // const resPerPage = 4;
         const apiFeatures = new APIFeatures(ProductModel.find().populate('brand'), req.query).search().filter();
-        // apiFeatures.pagination(resPerPage);
         const products = await apiFeatures.query;
         const productsCount = await ProductModel.countDocuments();
         const filteredProductsCount = products.length;
@@ -102,9 +89,7 @@ const getAllProducts = async (req, res, next) => {
             products,
         });
     } catch (error) {
-        // Check if the error is due to ObjectId casting issue
         if (error.name === 'CastError' && error.path === 'category') {
-            // Handle the error gracefully, perhaps by sending a 400 Bad Request response
             return res.status(400).json({ success: false, error: 'Invalid category ID' });
         }
         console.error(error);
@@ -112,7 +97,6 @@ const getAllProducts = async (req, res, next) => {
     }
 };
 
-//**Get all products by admin */
 const getAdminProducts = async (req, res, next) => {
     try {
         const products = await ProductModel.find().populate("brand").sort({ _id: -1 });
@@ -133,12 +117,10 @@ const getAdminProducts = async (req, res, next) => {
 };
 
 
-//** Price Change History */
 const priceChangeHistory = async (req, res) => {
     try {
-        // Fetch all price logs from PriceHistory model, sorted from latest to oldest
         const priceHistoryLog = await PriceHistoryModel.find()
-            .sort({ createdAt: -1 }) 
+            .sort({ createdAt: -1 })
             .populate("product")
             .populate({
                 path: "product",
@@ -147,12 +129,11 @@ const priceChangeHistory = async (req, res) => {
 
         res.json({ success: true, priceHistoryLog });
     } catch (error) {
-        console.error(error);
+        console.log(error);
         res.status(500).json({ success: false, error: error.message });
     }
 }
 
-//**Get product details by admin  */ 
 const getProductDetails = async (req, res, next) => {
     try {
         const product = await ProductModel.findById(req.params.id);
@@ -168,13 +149,11 @@ const getProductDetails = async (req, res, next) => {
             product,
         });
     } catch (error) {
-        // Handle errors here
-        console.error(error);
+        console.log(error);
         return next(new ErrorHandler('Error while fetching product details'));
     }
 };
 
-//**Update product by admin  */ 
 const updateProduct = async (req, res, next) => {
     let product = await ProductModel.findById(req.params.id);
 
@@ -191,8 +170,6 @@ const updateProduct = async (req, res, next) => {
     }
 
     if (images !== undefined) {
-
-        // Deleting images associated with the product
 
         for (let i = 0; i < product.images.length; i++) {
             const result = await cloudinary.v2.uploader.destroy(product.images[i].public_id);
@@ -215,22 +192,20 @@ const updateProduct = async (req, res, next) => {
 
     if (product.price != req.body.price) {
         const priceHistory = new PriceHistoryModel({
-            product: product.id, // Set the product reference
-            price: req.body.price, // Set the price from the product
+            product: product.id,
+            price: req.body.price,
             status:
                 req.body.price < product.price
                     ? "Decreased"
                     : req.body.price > product.price
                         ? "Increased"
-                        : "Initial", // Set the initial status
+                        : "Initial",
         });
 
         await priceHistory.save();
-
         console.log(priceHistory);
     }
 
-    // Update the product here
     product = await ProductModel.findByIdAndUpdate(req.params.id, req.body, {
         new: true,
         runValidators: true,
@@ -254,7 +229,6 @@ const updateStock = async (req, res, next) => {
         return next(new ErrorHandler('Product not found', 404));
     }
 
-    // Calculate stock change
     const stockChange = parseInt(product.stock) + parseInt(req.body.stock);
     const updateProduct = await ProductModel.findOneAndUpdate(
         { _id: req.params.id },
@@ -270,7 +244,7 @@ const updateStock = async (req, res, next) => {
                 }
             }
         },
-        { new: true } // Return the updated document
+        { new: true }
     );
 
     res.status(200).json({
@@ -297,7 +271,6 @@ const stockHistoryLogs = async (req, res, next) => {
                 });
         }
 
-        // Sort the allStockLogs array by timestamp (assuming the timestamp field is called 'createdAt')
         allStockLogs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
         res.status(200).json({ success: true, stockLogs: allStockLogs });
@@ -307,7 +280,6 @@ const stockHistoryLogs = async (req, res, next) => {
     }
 }
 
-//**Delete product by admin */ 
 const deleteProduct = async (req, res, next) => {
     const product = await ProductModel.findById(req.params.id);
     if (!product) {
@@ -323,7 +295,7 @@ const deleteProduct = async (req, res, next) => {
 const createProductReview = async (req, res, next) => {
     const { rating, comment, productId } = req.body;
 
-    const fullname  = `${req.user.firstname} ${req.user.lastname}`;
+    const fullname = `${req.user.firstname} ${req.user.lastname}`;
     const review = {
         user: req.user._id,
         name: fullname,
@@ -407,7 +379,6 @@ const deleteReview = async (req, res, next) => {
         success: true
     })
 }
-
 
 module.exports = {
     createProduct,

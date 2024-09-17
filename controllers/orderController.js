@@ -8,13 +8,12 @@ const axios = require("axios");
 const sendtoEmail = require("../utils/sendtoEmail");
 const crypto = require("crypto");
 const NotificationModel = require("../models/notification");
-const mongoose = require('mongoose');
 
 const handlePayMongo = async (orderItemsDetails, temporaryLink) => {
     try {
         const lineItems = orderItemsDetails.map((orderItem) => ({
             currency: "PHP",
-            amount: orderItem.price * orderItem.quantity * 100, // Assuming price is stored in orderItem
+            amount: orderItem.price * orderItem.quantity * 100,
             description: orderItem.productName,
             name: orderItem.productName,
             quantity: orderItem.quantity,
@@ -38,9 +37,9 @@ const handlePayMongo = async (orderItemsDetails, temporaryLink) => {
                         show_description: true,
                         show_line_items: true,
                         line_items: lineItems,
-                        payment_method_types: ["gcash"], // Specify the payment method types you accept
-                        description: "Order payment", // Description for the payment
-                        success_url: `${temporaryLink}`, // Redirect URL after successful payment
+                        payment_method_types: ["gcash"],
+                        description: "Order payment",
+                        success_url: `${temporaryLink}`,
                     },
                 },
             },
@@ -53,10 +52,10 @@ const handlePayMongo = async (orderItemsDetails, temporaryLink) => {
         console.log(response, "rees");
         const checkoutUrl = response.data.data.attributes.checkout_url;
 
-        return checkoutUrl; // Return the checkout URL
+        return checkoutUrl;
     } catch (error) {
-        // console.error("Error creating PayMongo checkout session:", error);
-        // throw error;
+        console.log("Error creating PayMongo checkout session:", error);
+
     }
 };
 
@@ -90,12 +89,9 @@ exports.newOrder = async (req, res, next) => {
                     return null;
                 }
 
-                // Check if payment method is Cash On Delivery
                 if (req.body.paymentMethod === "Cash On Delivery") {
-                    // Log the stock change
                     const stockChange = -orderItem.quantity;
 
-                    // Update the stockLogs
                     product.stockLogs.push({
                         name: product.name,
                         brand: product.brand.name,
@@ -126,14 +122,12 @@ exports.newOrder = async (req, res, next) => {
             })
         );
 
-        // Check if there were validation errors
         if (validationErrors.length > 0) {
             console.log(validationErrors);
             return res.status(400).send(validationErrors.join("\n"));
         }
 
         const initialOrderStatus = {
-            // Add the initial status when creating the order
             status: req.body.paymentMethod === "GCash" ? "TOPAY" : "Pending",
             timestamp: new Date(),
             message:
@@ -153,7 +147,7 @@ exports.newOrder = async (req, res, next) => {
             barangay: req.body.barangay,
             postalcode: req.body.postalcode,
             address: req.body.address,
-            orderStatus: [initialOrderStatus], // Include the initial order status
+            orderStatus: [initialOrderStatus],
             totalPrice: req.body.totalPrice,
             customerUser: req.body.customerUser,
             employeeUser: req.body.employeeUser,
@@ -174,7 +168,6 @@ exports.newOrder = async (req, res, next) => {
             verificationTokenExpire: new Date(Date.now() + 2 * 60 * 1000),
         }).save();
 
-        // HTML content for the email
         let emailContent = `
     <div style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 15px; justify-content: center; align-items: center; height: 40vh;">
     <div style="background-color: #ffffff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); text-align: center;">
@@ -214,7 +207,7 @@ exports.newOrder = async (req, res, next) => {
             user.email,
             "teamPOOR - Order Confirmation",
             emailContent,
-            true // Set the last parameter to true to indicate HTML content
+            true
         );
 
         if (req.body.paymentMethod === "GCash") {
@@ -265,7 +258,7 @@ exports.PaymentOrder = async (req, res, next) => {
             }
 
             orderItemsDetails.push({
-                productId: orderItem.product._id, // assuming 'product' is the populated field
+                productId: orderItem.product._id,
                 productName: orderItem.product.name,
                 quantity: orderItem.quantity,
                 price: orderItem.product.price,
@@ -284,10 +277,8 @@ exports.PaymentOrder = async (req, res, next) => {
 
         res.json({ checkoutUrl });
 
-        // res.send(user);
     } catch (error) {
-        // Handle any other errors that may occur during the process
-        console.error(error);
+        console.log(error);
         res.status(500).send("Internal Server Error");
     }
 }
@@ -326,7 +317,6 @@ exports.gcashPayment = async (req, res, next) => {
             await paymongoToken.save();
         }
 
-        // Deduct product stock from order items and update stockLogs
         for (const orderItem of order.orderItems) {
             const product = orderItem.product;
             if (!product) {
@@ -336,13 +326,11 @@ exports.gcashPayment = async (req, res, next) => {
             }
             const stockChange = -orderItem.quantity;
 
-            // Update product stock
             await ProductModel.updateOne(
                 { _id: product._id },
                 { $inc: { stock: stockChange } }
             );
 
-            // Update stockLogs
             product.stockLogs.push({
                 name: product.name,
                 brand: product.brand.name,
@@ -354,7 +342,6 @@ exports.gcashPayment = async (req, res, next) => {
             await product.save();
         }
 
-        // Update order status to "PAID"
         const orderStatusUpdatePaid = {
             status: "PAID",
             timestamp: new Date(),
@@ -362,23 +349,19 @@ exports.gcashPayment = async (req, res, next) => {
         };
 
         order.orderStatus.push(orderStatusUpdatePaid);
-
-        // Set isPaid field to true
         order.isPaid = true;
 
         await order.save();
 
         res.status(200).json({ message: "Payment completed successfully" });
     } catch (error) {
-        // Handle any other errors that may occur during the process
-        console.error(error);
+        console.log(error);
         res.status(500).send("Internal Server Error");
     }
 }
 
 exports.myOrders = async (req, res, next) => {
-    const orders = await OrderModel.find({ user: req.user._id }).sort({ dateOrdered: -1 });
-    // console.log(req.user)
+    const orders = await OrderModel.find({ user: req.user._id }).sort({ dateOrdered: -1 })
     res.status(200).json({
         success: true,
         orders,
@@ -387,7 +370,6 @@ exports.myOrders = async (req, res, next) => {
 
 exports.allOrders = async (req, res, next) => {
     const alllistorders = await OrderModel.find().sort({ dateOrdered: -1 });
-    // console.log(orders)
     let totalAmount = 0;
 
     alllistorders.forEach((order) => {
@@ -439,7 +421,6 @@ exports.updateOrder = async (req, res, next) => {
             let notification = new NotificationModel({
                 user: order.user,
                 title: "Your Parcel is Out for Delivery",
-                // message: `Your motorcycle has reached 1500 kilometers on the odometer. It's time to schedule Preventive Maintenance Service (PMS).`,
                 message: `Order #${order._id} is Out for Delivery`,
             });
 

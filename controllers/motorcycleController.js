@@ -3,11 +3,9 @@ const ErrorHandler = require("../utils/errorHandler");
 const mongoose = require("mongoose");
 const cloudinary = require("cloudinary");
 
-/** User access control */
 const createNewMotorcycle = async (req, res, next) => {
     try {
 
-        // Check if the platenumber already exists in the database
         const existingPlateNumber = await MotorModel.findOne({ plateNumber: req.body.plateNumber });
 
         if (existingPlateNumber) {
@@ -40,10 +38,8 @@ const createNewMotorcycle = async (req, res, next) => {
 
         const {year, brand, plateNumber, engineNumber, type, fuel } = req.body;
 
-        // Set the user ID from the request as the owner
         const owner = req.user.id;
 
-        // Create the new motorcycle, including the owner field
         const motorcycle = await MotorModel.create({
             year,
             brand,
@@ -51,7 +47,7 @@ const createNewMotorcycle = async (req, res, next) => {
             engineNumber,
             type,
             fuel,
-            owner, // Set the owner to the user's ID
+            owner,
             imageMotorcycle: {
                 public_id: imgMotorcycle.public_id,
                 url: imgMotorcycle.secure_url
@@ -62,13 +58,12 @@ const createNewMotorcycle = async (req, res, next) => {
             }
         });
 
-        // Respond with a success status and the created motorcycle
         res.status(201).json({
             success: true,
             motorcycle,
         });
     } catch (error) {
-        // Pass the error to the error-handling middleware
+        console.log(error);
         return next(new ErrorHandler("Failed to create a new motorcycle", 500));
     }
 };
@@ -95,7 +90,6 @@ const updateMotor = async (req, res, next) => {
         return next(new ErrorHandler("Invalid ID", 404));
 
     try {
-        // Assuming you have user information available in req.user
         const loggedInUserId = req.user.id;
 
         const motorcycle = await MotorModel.findOne({ _id: id });
@@ -103,12 +97,10 @@ const updateMotor = async (req, res, next) => {
         if (!motorcycle)
             return next(new ErrorHandler("Motorcycle not found", 404));
 
-        // Check if the logged-in user is the owner of the motorcycle
         if (motorcycle.owner.toString() !== loggedInUserId) {
             return next(new ErrorHandler("Unauthorized Access", 403));
         }
 
-        // If the user is the owner, proceed with the update
         const updatedMotorcycle = await MotorModel.findByIdAndUpdate(id, req.body, { new: true });
 
         return res.json({ success: true, motorcycle: updatedMotorcycle });
@@ -117,7 +109,7 @@ const updateMotor = async (req, res, next) => {
     }
 };
 
-/** Admin access control */
+
 const getAllMotorcycles = async (req, res, next) => {
     try {
         const motorcycles = await MotorModel.find();
@@ -151,7 +143,6 @@ const getMotorcycleDetails = async (req, res, next) => {
             motorcycle,
         });
     } catch (error) {
-        // Handle errors here
         console.error(error);
         return next(new ErrorHandler('Error while fetching user details'));
     }
@@ -171,7 +162,6 @@ const updatedMotorcycleDetails = async (req, res, next) => {
         });
 
         if (!motorcycle) {
-            // If no motorcycle was found with the provided id, return an error response.
             return next(new ErrorHandler(404, 'Motorcycle not found'));
         }
 

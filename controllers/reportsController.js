@@ -6,11 +6,11 @@ exports.productSales = async (req, res, next) => {
     try {
         const monthlySales = await OrderModel.aggregate([
             {
-                $unwind: "$orderItems" // Unwind to deconstruct orderItems array
+                $unwind: "$orderItems"
             },
             {
                 $lookup: {
-                    from: "orderitems", // The name of the orderitems collection
+                    from: "orderitems",
                     localField: "orderItems",
                     foreignField: "_id",
                     as: "orderItem"
@@ -21,7 +21,7 @@ exports.productSales = async (req, res, next) => {
             },
             {
                 $lookup: {
-                    from: "products", // The name of the products collection
+                    from: "products",
                     localField: "orderItem.product",
                     foreignField: "_id",
                     as: "product"
@@ -33,13 +33,13 @@ exports.productSales = async (req, res, next) => {
             {
                 $group: {
                     _id: {
-                        year: { $year: "$dateOrdered" }, // Extract year from dateOrdered
-                        month: { $month: "$dateOrdered" } // Extract month from dateOrdered
+                        year: { $year: "$dateOrdered" },
+                        month: { $month: "$dateOrdered" }
                     },
-                    totalPrice: { $sum: { $multiply: ["$orderItem.quantity", "$product.price"] } } // Calculate total price only
+                    totalPrice: { $sum: { $multiply: ["$orderItem.quantity", "$product.price"] } }
                 }
             },
-            { $sort: { "_id.year": 1, "_id.month": 1 } } // Sort by year and month
+            { $sort: { "_id.year": 1, "_id.month": 1 } }
         ]);
 
         res.status(200).json({
@@ -84,7 +84,7 @@ exports.mostPurchasedProduct = async (req, res, next) => {
                 $unwind: "$brand"
             },
             {
-                $sort: { totalQuantity: -1 } // Sort by total quantity in descending order
+                $sort: { totalQuantity: -1 }
             },
             {
                 $project: {
@@ -106,15 +106,13 @@ exports.mostPurchasedProduct = async (req, res, next) => {
     }
 };
 
-
-
 exports.mostLoyalUser = async (req, res, next) => {
     try {
         const mostPurchasedUser = await OrderModel.aggregate([
             {
                 $group: {
                     _id: "$user",
-                    totalPurchased: { $sum: "$totalPrice" } // Sum up the totalPrice for each user
+                    totalPurchased: { $sum: "$totalPrice" }
                 }
             },
             {
@@ -129,7 +127,7 @@ exports.mostLoyalUser = async (req, res, next) => {
                 $unwind: "$user"
             },
             {
-                $sort: { totalPurchased: -1 } // Sort by totalPurchased in descending order
+                $sort: { totalPurchased: -1 }
             }
         ]);
 
@@ -175,7 +173,7 @@ exports.mostPurchasedBrand = async (req, res, next) => {
                 }
             },
             {
-                $sort: { totalQuantity: -1 } // Sort by total quantity in descending order
+                $sort: { totalQuantity: -1 }
             },
             {
                 $project: {
@@ -201,13 +199,13 @@ exports.mostRatedMechanics = async (req, res, next) => {
             {
                 $group: {
                     _id: "$mechanic",
-                    totalRatings: { $sum: 1 }, // Count total ratings
-                    averageRating: { $avg: "$rating" }, // Calculate average rating
+                    totalRatings: { $sum: 1 },
+                    averageRating: { $avg: "$rating" },
                 }
             },
             {
                 $lookup: {
-                    from: "users", // Assuming the name of the mechanics collection is "users"
+                    from: "users",
                     localField: "_id",
                     foreignField: "_id",
                     as: "mechanic"
@@ -217,14 +215,14 @@ exports.mostRatedMechanics = async (req, res, next) => {
                 $unwind: "$mechanic"
             },
             {
-                $sort: { averageRating: -1 } // Sort by average rating in descending order
+                $sort: { averageRating: -1 }
             },
             {
                 $project: {
                     _id: 1,
                     totalRatings: 1,
                     averageRating: 1,
-                    mechanicName: "$mechanic.lastname", // Assuming name field exists in the users collection for mechanics
+                    mechanicName: "$mechanic.lastname",
                 }
             }
         ]);

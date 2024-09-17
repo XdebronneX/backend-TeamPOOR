@@ -15,15 +15,9 @@ const addresses = require('./routes/addresses');
 const services = require('./routes/service');
 const appointments = require('./routes/appointment');
 const allowedOrigins = ['https://www.teampoor-motorcycle-parts-and-services.online'];
-// app.use(cors());
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ limit: "20mb", extended: true }));
 app.use(cookieParser());
-// app.use(cors({
-//     origin: "http://localhost:3000",
-//     credentials: true,
-// }));
-// app.use(cors());
 app.use(cors({
     origin: (origin, callback) => {
         if (!origin || allowedOrigins.includes(origin)) {
@@ -34,7 +28,6 @@ app.use(cors({
     },
     credentials: true,
 }));
-
 
 app.use('/api/v1',users);
 app.use('/api/v1', motorcycles);

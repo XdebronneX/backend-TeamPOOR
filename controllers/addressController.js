@@ -6,9 +6,8 @@ const createNewAddresses = async (req, res, next) => {
     try {
         const { address, region, province, city, barangay, postalcode } = req.body;
 
-        // Set the user ID from the request as the owner
         const user = req.user.id;
-        // Create the new address, including the owner field
+
         const newAddresses = await AddressesModel.create({
             address,
             region,
@@ -16,16 +15,14 @@ const createNewAddresses = async (req, res, next) => {
             city,
             barangay,
             postalcode,
-            user, // Set the owner to the user's ID
+            user, 
         });
 
-        // Respond with a success status and the created address
         res.status(201).json({
             success: true,
             newAddresses,
         });
     } catch (error) {
-        // Pass the error to the error-handling middleware
         return next(new ErrorHandler("Failed to create a new address", 500));
     }
 };
@@ -58,7 +55,6 @@ const getAddressesDetails = async (req, res, next) => {
             addresses,
         });
     } catch (error) {
-        // Handle errors here
         console.error(error);
         return next(new ErrorHandler('Error while fetching user addresses'));
     }
@@ -71,7 +67,6 @@ const updateAddresses = async (req, res, next) => {
         return next(new ErrorHandler("Invalid ID", 404));
 
     try {
-        // Assuming you have user information available in req.user
         const loggedInUserId = req.user.id;
 
         const addresses = await AddressesModel.findOne({ _id: id });
@@ -79,12 +74,10 @@ const updateAddresses = async (req, res, next) => {
         if (!addresses)
             return next(new ErrorHandler("Motorcycle not found", 404));
 
-        // Check if the logged-in user is the owner of the motorcycle
         if (addresses.user.toString() !== loggedInUserId) {
             return next(new ErrorHandler("Unauthorized Access", 403));
         }
 
-        // If the user is the owner, proceed with the update
         const updateAddresses = await AddressesModel.findByIdAndUpdate(id, req.body, { new: true });
 
         return res.json({ success: true, addresses: updateAddresses });
@@ -100,16 +93,14 @@ const updateDefaultAddress = async (req, res, next) => {
         return next(new ErrorHandler("Invalid ID", 404));
 
     try {
-        // If the user is the owner, proceed with the update
+
         const userId = req.user.id;
 
-        // Unset default flag for all other addresses of the user
         await AddressesModel.updateMany({ user: userId }, { isDefault: false });
 
-        // Set the new default address
         const updatedDefaultAddress = await AddressesModel.findByIdAndUpdate(
             id,
-            { ...req.body, isDefault: true }, // Ensure isDefault is set to true
+            { ...req.body, isDefault: true },
             { new: true }
         );
 
@@ -126,7 +117,7 @@ const deleteAddresses = async (req, res, next) => {
         return next(new ErrorHandler("Invalid ID", 404));
 
     try {
-        // Assuming you have user information available in req.user
+
         const loggedInUserId = req.user.id;
 
         const addresses = await AddressesModel.findById(id);
@@ -134,12 +125,10 @@ const deleteAddresses = async (req, res, next) => {
         if (!addresses)
             return next(new ErrorHandler("Addresses not found", 404));
 
-        // Check if the logged-in user is the owner of the addresses
         if (addresses.user.toString() !== loggedInUserId) {
             return next(new ErrorHandler("Unauthorized Access", 403));
         }
 
-        // If the user is the owner, proceed with the deletion
         await addresses.deleteOne();
 
         return res.json({ success: true });

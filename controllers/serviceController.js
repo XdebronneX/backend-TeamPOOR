@@ -5,10 +5,8 @@ const mongoose = require("mongoose");
 
 const createService = async (req, res, next) => {
     try {
-        // Ensure images is an array
         let images = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
 
-        // Upload images to Cloudinary
         const imagesLinks = await Promise.all(images.map(async (image) => {
             const result = await cloudinary.v2.uploader.upload(image, {
                 folder: 'services'
@@ -22,16 +20,13 @@ const createService = async (req, res, next) => {
 
         req.body.images = imagesLinks;
 
-        // Create the product in the database
         const service = await ServiceModel.create(req.body);
 
-        // Respond with the created product
         res.status(201).json({
             success: true,
             service
         });
     } catch (error) {
-        // Handle errors and respond with a meaningful message
         console.log(error);
         res.status(500).json({
             success: false,
@@ -104,8 +99,6 @@ const updateService = async (req, res, next) => {
     }
 
     if (images !== undefined) {
-
-        // Deleting images associated with the product
 
         for (let i = 0; i < service.images.length; i++) {
             const result = await cloudinary.v2.uploader.destroy(service.images[i].public_id)

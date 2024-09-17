@@ -10,7 +10,6 @@ const SupplierModel = require("../models/supplierLogs");
 const ProductModel = require("../models/product");
 const NotificationModel = require("../models/notification");
 
-/** User access control */
 const registerUser = async (req, res, next) => {
   try {
     const existingEmailUser = await UserModel.findOne({
@@ -51,7 +50,6 @@ const registerUser = async (req, res, next) => {
     }).save();
     const emailVerification = `${process.env.FRONTEND_URL}/verify/email/${token.token}/${user._id}`;
 
-    // HTML content for the email
     const emailContent = `
         <div style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 15px; justify-content: center; align-items: center; height: 40vh;">
         <div style="background-color: #ffffff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); text-align: center;">
@@ -71,14 +69,13 @@ const registerUser = async (req, res, next) => {
       user.email,
       "teamPOOR - Verify Email",
       emailContent,
-      true // Set the last parameter to true to indicate HTML content
+      true
     );
 
     res
       .status(200)
       .json({ success: true, message: `Email sent to: ${user.email}. wait at least 3-5 minutes` });
 
-    // res.status(201).json({ success: true ,message: 'Registered successfully!', user });
   } catch (error) {
     console.log(error);
     res.status(500).json({
@@ -93,19 +90,16 @@ const loginUser = async (req, res, next) => {
   const { email, password } = req.body;
 
   try {
-    // Checks if email and password are entered by the user
     if (!email || !password) {
       return next(new ErrorHandler("Please enter email & password", 400));
     }
 
-    // Finding the user in the database
     const user = await UserModel.findOne({ email }).select("+password");
 
     if (!user) {
       return next(new ErrorHandler("Invalid Email or Password", 400));
     }
 
-    // Checks if the password is correct
     const isPasswordMatched = await bcrypt.compare(password, user.password);
 
     if (!isPasswordMatched) {
@@ -127,7 +121,6 @@ const loginUser = async (req, res, next) => {
         );
         const emailVerification = `${process.env.FRONTEND_URL}/verify/email/${token.token}/${user._id}`;
 
-        // HTML content for the email
         const emailContent = `
                 <div style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 15px; justify-content: center; align-items: center; height: 40vh;">
                 <div style="background-color: #ffffff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); text-align: center;">
@@ -149,13 +142,11 @@ const loginUser = async (req, res, next) => {
           emailContent,
           true
         );
-        // New Token will be sent as a response with status code
         res.status(403).json({
           success: false,
           message: "Token expired! new  one has been sent to your email.",
         });
       } else {
-        // already send  a verification link
         return next(
           new ErrorHandler(
             "Please check your email for verification link.",
@@ -164,7 +155,6 @@ const loginUser = async (req, res, next) => {
         );
       }
     } else {
-      // If all checks pass, send the token
       sendToken(user, 200, res);
     }
   } catch (error) {
@@ -175,30 +165,16 @@ const loginUser = async (req, res, next) => {
 
 const logoutUser = async (req, res, next) => {
   try {
-    // Clear the token cookie by setting it to an empty string or omitting the value
     res.cookie("token", null, {
-      expires: new Date(Date.now()), // Set expiration date in the past
+      expires: new Date(Date.now()),
       httpOnly: true,
     });
 
-    // res.cookie("token", "", {
-    //   expires: new Date(0), // Set expiration date in the past
-    //   httpOnly: true,
-    //   secure: true,
-    //   maxAge: 10 * 1000,
-    // });
-
-    // res.cookie("token", "", {
-    //   httpOnly: true,
-    //   secure: true,
-    //   maxAge: 10 * 1000,
-    // });
-
-    // Send a response indicating successful logout
     res.status(200).json({ success: true, message: "Logged out successfully" });
   } catch (error) {
-    // Handle any unexpected errors that might occur
-    next(error); // Pass the error to the error handling middleware
+    console.log(error);
+    return next(new ErrorHandler("Internal server error!", 500));
+    
   }
 };
 
@@ -212,16 +188,15 @@ const getUserProfile = async (req, res, next) => {
 
     res.status(200).json({ success: true, user });
   } catch (error) {
-    next(error); // Pass the error to the error handler middleware
+    next(error);
   }
 };
 
 const updateProfile = async (req, res, next) => {
   try {
-    // Check if the provided phone number already exists in the database
     const existingUserWithPhoneNumber = await UserModel.findOne({
       phone: req.body.phone,
-      _id: { $ne: req.user.id }, // Exclude the current user from the search
+      _id: { $ne: req.user.id },
     });
 
     if (existingUserWithPhoneNumber) {
@@ -302,7 +277,6 @@ const updateProfile = async (req, res, next) => {
 const updatePassword = async (req, res, next) => {
   try {
     const user = await UserModel.findById(req.user.id).select("password");
-    // Check previous user password
     const isMatched = await user.comparePassword(req.body.oldPassword);
     if (!isMatched) {
       return next(new ErrorHandler("Old password is incorrect!", 400));
@@ -311,7 +285,6 @@ const updatePassword = async (req, res, next) => {
     await user.save();
     sendToken(user, 200, res);
   } catch (error) {
-    // Handle any errors that occur during the password update
     res.status(500).json({
       success: false,
       message: "An error occurred while updating the password",
@@ -332,7 +305,6 @@ const forgotPassword = async (req, res, next) => {
 
     const resetUrl = `${process.env.FRONTEND_URL}/password/reset/${resetToken}`;
 
-    // HTML content for the email
     const emailContent = `
         <div style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 15px; justify-content: center; align-items: center; height: 40vh;">
             <div style="background-color: #ffffff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); text-align: center;">
@@ -353,14 +325,14 @@ const forgotPassword = async (req, res, next) => {
         user.email,
         "teamPOOR - Password Recovery",
         emailContent,
-        true // Set the last parameter to true to indicate HTML content
+        true
       );
 
       res
         .status(200)
         .json({ success: true, message: `Email sent to: ${user.email}` });
     } catch (emailError) {
-      // Handle email sending error
+
       user.resetPasswordToken = undefined;
       user.resetPasswordExpire = undefined;
 
@@ -370,7 +342,6 @@ const forgotPassword = async (req, res, next) => {
       );
     }
   } catch (error) {
-    // Handle any other errors
     return next(
       new ErrorHandler("An error occurred while processing your request", 500)
     );
@@ -378,7 +349,6 @@ const forgotPassword = async (req, res, next) => {
 };
 
 const resetPassword = async (req, res, next) => {
-  // Hash URL token
   const resetPasswordToken = crypto
     .createHash("sha256")
     .update(req.params.token)
@@ -406,7 +376,6 @@ const resetPassword = async (req, res, next) => {
       return next(new ErrorHandler("Passwords do not match", 400));
     }
 
-    // Setup new password
     user.password = newPassword;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
@@ -418,7 +387,7 @@ const resetPassword = async (req, res, next) => {
       message: "Password reset successfully!",
     });
   } catch (error) {
-    return next(new ErrorHandler(error.message, 500));
+    return next(new ErrorHandler(error.message || "Internal server error", 500));
   }
 };
 
@@ -430,7 +399,6 @@ const verifyUserEmail = async (req, res, next) => {
 
     let token = await TokenModel.findOne({ verifyUser: user._id });
 
-    // If a token exists for the user, update it; otherwise, create a new one
     if (token) {
       token.token = req.params.token;
       await token.save();
@@ -456,22 +424,18 @@ const verifyUserEmail = async (req, res, next) => {
 const updateNotification = async (req, res, next) => {
   try {
     const notificationId = req.params.id;
-
-    // Find the notification based on the provided notification ID
     const notification = await NotificationModel.findById(notificationId);
 
     if (!notification) {
       return res.status(404).json({ message: "Notification not found" });
     }
 
-    // Get the user ID from the found notification
     const userId = notification.user;
 
-    // Update all notifications for the user to set isRead to true
     await NotificationModel.updateMany({ user: userId }, { isRead: true });
 
     const notifications = await NotificationModel.find({ user: userId })
-      .sort({ createdAt: -1 }) // Sort by createdAt field in descending order
+      .sort({ createdAt: -1 })
       .populate("user")
       .lean();
 
@@ -495,8 +459,6 @@ const notificationAll = async (req, res, next) => {
       isRead: false,
     }).sort({ createdAt: -1 });
 
-    // console.log(unreadNotifications, "unreadNotifications");
-
     res.json({ unreadNotifications });
   } catch (error) {
     console.log(error);
@@ -504,7 +466,6 @@ const notificationAll = async (req, res, next) => {
   }
 };
 
-/** Admin access control */
 const getAllUsers = async (req, res, next) => {
   try {
     const users = await UserModel.find();
@@ -525,9 +486,8 @@ const getAllUsers = async (req, res, next) => {
 
 const getAllSuppliers = async (req, res, next) => {
   try {
-    // Fetch users with the role "supplier"
     const suppliers = await UserModel.find({ role: "supplier" });
-    const totalSuppliers = suppliers.length; // Count the total number of users fetched
+    const totalSuppliers = suppliers.length;
     return res.status(200).json({
       success: true,
       totalSuppliers,
@@ -542,34 +502,27 @@ const getAllSuppliers = async (req, res, next) => {
   }
 };
 
-//** Best as of march 17 10:34pm new schema with brandname and updating stock of each product*/
 const supplierHistoryLogs = async (req, res, next) => {
   try {
     const { supplier, products, invoiceId, dateDelivered, totalPrice, notes } =
       req.body;
 
-    // Ensure products data is properly formatted
     const parsedProducts = Array.isArray(products)
       ? products
       : JSON.parse(products || "[]");
-    console.log("pareeee", parsedProducts);
 
-    // Update product stock and log history
     for (const productData of parsedProducts) {
       let product = await ProductModel.findById(productData.productId).populate(
         "brand"
-      ); // Fetch product from database by ID
+      );
 
       if (!product) {
-        // Handle case where product is not found
-        console.error(`Product with ID ${productData.productId} not found`);
-        continue; // Skip processing this product and move to the next one
+        console.log(`Product with ID ${productData.productId} not found`);
+        continue;
       }
 
-      // Assuming 'product' is an instance of your Product model
-      product.stock += parseInt(productData.quantity); // Convert quantity to integer before addition
+      product.stock += parseInt(productData.quantity);
 
-      // Initialize stockLogs array if it's undefined
       if (!product.stockLogs) {
         product.stockLogs = [];
       }
@@ -581,12 +534,11 @@ const supplierHistoryLogs = async (req, res, next) => {
         status: "Restocked",
         by: "secretary",
       };
-      product.stockLogs.push(stockHistory); // Log stock history
+      product.stockLogs.push(stockHistory);
 
-      await product.save(); // Save the updated product
+      await product.save();
     }
 
-    // Construct the new instance of SupplierLog
     const newSupplierLog = new SupplierModel({
       supplier,
       products: parsedProducts.map((productData) => ({
@@ -601,18 +553,15 @@ const supplierHistoryLogs = async (req, res, next) => {
       notes,
     });
 
-    // Save the new supplier log to the database
     await newSupplierLog.save();
 
-    // Respond with a success message
     return res.status(201).json({
       message: "Supplier log created successfully",
       success: true,
       newSupplierLog,
     });
   } catch (error) {
-    // Handle errors and respond with an error message
-    console.error(error);
+    console.log(error);
     return res
       .status(500)
       .json({ error: "An error occurred while submitting the supplier log" });
@@ -647,8 +596,8 @@ const getSingleSupplied = async (req, res, next) => {
       supplied,
     });
   } catch (err) {
-    // Handle any errors
-    return next(new ErrorHandler(err.message, 500));
+    console.log(err);
+    return next(new ErrorHandler(err.message || "Internal server error", 500));
   }
 };
 
@@ -665,8 +614,7 @@ const getUserDetails = async (req, res, next) => {
       user,
     });
   } catch (error) {
-    // Handle errors here
-    console.error(error);
+    console.log(error);
     return next(new ErrorHandler("Error while fetching user details"));
   }
 };
@@ -686,7 +634,6 @@ const updateUser = async (req, res, next) => {
     });
 
     if (!user) {
-      // If no user was found with the provided id, return an error response.
       return res.status(404).json({
         success: false,
         message: "User not found",
@@ -698,8 +645,7 @@ const updateUser = async (req, res, next) => {
       user,
     });
   } catch (error) {
-    // Handle errors here
-    console.error(error);
+    console.log(error);
     res.status(500).json({
       success: false,
       message: "An error occurred while updating the user",

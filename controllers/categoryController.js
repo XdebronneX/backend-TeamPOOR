@@ -4,15 +4,12 @@ const ErrorHandler = require("../utils/errorHandler")
 
 const createCategory = async (req, res, next) => {
     try {
-        // Check if the name of the category already exists in the database
         const existingCategory = await CategoryModel.findOne({ name: req.body.name });
 
         if (existingCategory) {
-            // Return a 400 status with a meaningful message if the category name already exists
             return res.status(400).json({ message: 'Category name already exists!' });
         }
 
-        // Upload category images to Cloudinary
         const cloudinaryFolderOption = {
             folder: 'category',
             width: 150,
@@ -21,10 +18,8 @@ const createCategory = async (req, res, next) => {
 
         const result = await cloudinary.v2.uploader.upload(req.body.images, cloudinaryFolderOption);
 
-        // Destructure required properties from the request body
         const { name } = req.body;
 
-        // Create a new category in the database with the uploaded image details
         const category = await CategoryModel.create({
             name,
             images: {
@@ -33,10 +28,8 @@ const createCategory = async (req, res, next) => {
             }
         });
 
-        // Respond with the created category object
         res.status(201).json({ success: true, category });
     } catch (error) {
-        // Handle errors and respond with a 500 status and a meaningful message
         console.error(error);
         res.status(500).json({ message: 'Failed to create category' });
     }
@@ -60,7 +53,6 @@ const getAllCategory = async (req, res, next) => {
     }
 };
 
-//* Update walang images/
 const updateCategoryDetails = async (req, res, next) => {
     try {
         const newCategoryData = {
@@ -73,7 +65,6 @@ const updateCategoryDetails = async (req, res, next) => {
         });
 
         if (!category) {
-            // If no category was found with the provided id, return an error response.
             return next(new ErrorHandler('Category not found', 404,));
         }
 
@@ -82,7 +73,6 @@ const updateCategoryDetails = async (req, res, next) => {
             category
         });
     } catch (error) {
-        // Handle errors using the ErrorHandler
         return next(new ErrorHandler('An error occurred while updating the category', 500));
     }
 };
@@ -102,7 +92,6 @@ const getCategoryDetails = async (req, res, next) => {
             category,
         });
     } catch (error) {
-        // Handle errors here
         console.error(error);
         return next(new ErrorHandler('Error while fetching category details'));
     }

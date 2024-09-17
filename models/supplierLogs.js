@@ -27,7 +27,6 @@ const supplierLogSchema = new mongoose.Schema({
     },
     notes: {
         type: String,
-        // required: true,
     },
     dateDelivered: {
         type: Date,

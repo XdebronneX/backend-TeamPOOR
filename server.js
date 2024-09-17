@@ -10,10 +10,8 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-//connect to database
 teamPoor();
 
-//start the express server
 app.listen(process.env.PORT, () => {
     console.log(`server started in ${process.env.NODE_ENV} mode `);
 });
