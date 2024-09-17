@@ -7,7 +7,6 @@ const cloudinary = require("cloudinary");
 const bcrypt = require("bcryptjs");
 const TokenModel = require("../models/token");
 const SupplierModel = require("../models/supplierLogs");
-const mongoose = require("mongoose");
 const ProductModel = require("../models/product");
 const NotificationModel = require("../models/notification");
 
@@ -22,23 +21,17 @@ const registerUser = async (req, res, next) => {
     });
 
     if (existingEmailUser && existingPhoneUser) {
-      // return res.status(400).json({ message: 'Email and phone number already exist!' });
       return next(
         new ErrorHandler("Email and phone number already exist!", 400)
       );
-      // return res.status(400).send("Phone number and Email address already exists");
     }
 
     if (existingEmailUser) {
-      // return res.status(400).json({ message: 'Email address already exists!' });
       return next(new ErrorHandler("Email address already exist!", 400));
-      // return res.status(400).send("Email already exists");
     }
 
     if (existingPhoneUser) {
-      // return res.status(400).json({ message: 'Phone number already exists!' });
       return next(new ErrorHandler("Phone number already taken!", 400));
-      // return res.status(400).send("Phone number already exists");
     }
 
     const { firstname, lastname, phone, email, password } = req.body;
